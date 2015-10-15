@@ -106,61 +106,7 @@ public class WebSpider extends Thread {
 	}
 
 	public void run() {
-		//alternativeRun();
-		if (true) {
-			System.err.println("Spider born @ \"" + urlString + "\", generation " + generation + "<<<<<<<<<<<<<<<<<<<<<<<<");
-			String[] strs = domain.split("\\.");
-
-			if (strs.length > 1) {
-				if (strs[0].contains("www"))
-					this.Keywords.add(strs[1]);
-				else
-					this.Keywords.add(strs[0]);
-			}
-
-			isSuccessful = false;
-			if (url == null) {
-				return;
-			}
-			BufferedReader in = null;
-			try {
-				in = new BufferedReader(new InputStreamReader(url.openStream()));
-				String currentLine;
-				boolean reachBody = false;
-				long startTime = new Date().getTime(); // debug
-				while ((currentLine = in.readLine()) != null) {
-					if (currentLine.contains("<title>ERROR: The requested URL could not be retrieved</title>")) {
-						System.err.println("A spider died accidently due to error page... RIP");
-						return;
-					}
-					// Extract keywords
-					extractKeywords(currentLine);
-					// Extract hyperlinks
-					if (!reachBody && currentLine.contains("</head>"))
-						reachBody = true;
-					if (reachBody)
-						extractHyperlinks(currentLine);
-				}
-				// debug
-				long endTime = new Date().getTime();
-				System.err.println("Lines process time : " + ((endTime - startTime)) / 1000 + " seconds.");
-
-				in.close();
-				isSuccessful = true;
-				// spiderReproduce(); //BFS
-				System.out.println("A spider died peacefully... RIP");
-
-				spiderReport();
-			} catch (IOException e) {
-				System.err.println("\nA spider died accidently due to IOException... RIP");
-				return;
-			}
-			return;
-		}
-	}
-
-	public void alternativeRun() {
-		System.err.println("Spider born @ " + urlString + ", generation " + generation + "<<<<<<<<<<<<<<<<<<<<<<<<");
+		System.err.println("Spider born @ \"" + urlString + "\", generation " + generation + "<<<<<<<<<<<<<<<<<<<<<<<<");
 		String[] strs = domain.split("\\.");
 
 		if (strs.length > 1) {
@@ -178,36 +124,24 @@ public class WebSpider extends Thread {
 		try {
 			in = new BufferedReader(new InputStreamReader(url.openStream()));
 			String currentLine;
-			String html = "";
-
+			boolean reachBody = false;
 			long startTime = new Date().getTime(); // debug
-
 			while ((currentLine = in.readLine()) != null) {
-				html += currentLine;
-				extractKeywords(currentLine);
-			}
-			Document doc = Jsoup.parse(html);
-			Elements links = doc.getElementsByTag("a");
-			for (Element link : links) {
-				String url = link.attr("href");
-
-				while (spiderEggs.size() < x // BFS
-						&& ProceeedURLPool.size() <= y && !URLPool.contains(url)
-						&& !ProceeedURLPool.contains(url)
-						&& !DeadLinkPool.contains(url)) {
-					URLPool.add(url);
-					if (URLPool.size() > 0 && spiderEggs.size() < x) {
-						System.out.println(url);
-						spiderEggs.add(new WebSpider(url, x, y, generation + 1));
-						ProceeedURLPool.add(URLPool.remove());
-						new WebSpider(url, x, y, generation + 1).run(); // BFS
-					}
+				if (currentLine.contains("<title>ERROR: The requested URL could not be retrieved</title>")) {
+					System.err.println("A spider died accidently due to error page... RIP");
+					return;
 				}
+				// Extract keywords
+				extractKeywords(currentLine);
+				// Extract hyperlinks
+				if (!reachBody && currentLine.contains("</head>"))
+					reachBody = true;
+				if (reachBody)
+					extractHyperlinks(currentLine);
 			}
-
 			// debug
 			long endTime = new Date().getTime();
-			System.err.println("Lines process time : " + ((endTime - startTime))/1000 + " seconds.");
+			System.err.println("Lines process time : " + ((endTime - startTime)) / 1000 + " seconds.");
 
 			in.close();
 			isSuccessful = true;
