@@ -1,0 +1,5 @@
+proposed design
+
+add duplicated keywords for weight calculation
+use spider result as cache and store locally, update every few minutes
+send the whole index to client? or server process the index and send result
