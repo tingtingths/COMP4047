@@ -11,7 +11,7 @@ import java.util.Date;
 public class SpiderServletContextListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
-        Loghelper.getInstance().log(this.getClass().getSimpleName(), "context initialized... starting spider");
+        Loghelper.get().log(this.getClass().getSimpleName(), "context initialized... starting spider");
 
         long startTime = new Date().getTime();
         if (false) {
@@ -20,10 +20,10 @@ public class SpiderServletContextListener implements ServletContextListener {
         }
 
         try {
-            Thread.sleep(5000); // simulate spider loading...
+            Thread.sleep(0); // simulate spider loading...
         } catch (Exception e) {  }
         long endTime = new Date().getTime();
-        Loghelper.getInstance().log(this.getClass().getSimpleName(), "spider finish, time taken : " + (endTime - startTime) + " ms");
+        Loghelper.get().log(this.getClass().getSimpleName(), "spider finish, time taken : " + (endTime - startTime) + " ms");
     }
 
 

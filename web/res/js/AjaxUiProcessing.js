@@ -2,7 +2,7 @@
  * Created by Ting on 12/10/2015.
  */
 
-apiDomain = "http://158.182.6.129:8080/spider/search"
+apiURL = window.location.protocol + "//" + window.location.host + "/spider/search"
 var firstProcess = true;
 var result;
 var ptr = 0;
@@ -29,6 +29,8 @@ function search(ele) {
 
 		var searchPattern = document.getElementById("textField").value;
 		console.log("value : " + searchPattern);
+		//console.log(window.location.protocol);
+		//console.log(window.location.host);
 
 		// Http request
 		var req = new XMLHttpRequest();
@@ -42,10 +44,11 @@ function search(ele) {
 				var json = req.responseText;
 				// arrange the result
 				startUiProcess(json);
+
 			}
 		}
 
-		req.open("GET", apiDomain + "?q=" + searchPattern, true);
+		req.open("GET", apiURL + "?q=" + searchPattern, true);
 		req.send();
 		start_time = Date.now();
 		
@@ -58,7 +61,19 @@ function startUiProcess(json) {
 	// reset the icon
 	document.getElementById("goBtn").src = "./res/img/goBtn.png";
 	console.log("Processing json...");
-	console.log("json: " + json);
+	//console.log("json: " + json);
+	var results = JSON.parse(json);
+	var sortList = [];
+
+	//console.log(jsonArr);
+	for (var i in results) {
+		var result = results[i];
+		sortList.push(result);
+	}
+	// descending
+	sortList.sort(function(a, b) {
+		return b["weight"] - a["weight"];
+	});
 
 	if (firstProcess) {
 		firstProcess = false;
@@ -76,11 +91,15 @@ function startUiProcess(json) {
 	// process json
 	//....
 
-	appendResult();
+	appendResult(sortList);
 }
 
-function appendResult() {
+function appendResult(sorted) {
 	// create result element and append into resultContainer
+	for (var i in sorted) {
+		var result = sorted[i];
+		console.log(result["url"] + " w: " + result["weight"]);
+	}
 }
 
 function inputOnFocus() {

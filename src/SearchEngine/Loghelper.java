@@ -6,7 +6,7 @@ package SearchEngine;
 public class Loghelper {
     private static Loghelper ourInstance = new Loghelper();
 
-    public static Loghelper getInstance() {
+    public static Loghelper get() {
         return ourInstance;
     }
 
