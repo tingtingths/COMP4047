@@ -1,3 +1,5 @@
+package Spider;
+
 import edu.smu.tspell.wordnet.*;
 
 public class WordChecker {

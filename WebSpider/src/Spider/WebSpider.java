@@ -1,7 +1,4 @@
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+package Spider;
 
 import java.net.*;
 import java.util.Date;
