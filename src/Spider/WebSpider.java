@@ -1,6 +1,6 @@
 package Spider;
 
-import SearchEngine.JsonStorage;
+import SearchEngine.Loghelper;
 
 import java.net.*;
 import java.util.LinkedList;
@@ -153,29 +153,19 @@ public class WebSpider {
 	}
 
 	private void spiderReport() {
-
-		if (false) {
-			String resultline = "";
-			resultline += this.domain + ";" + this.urlString + ";";
+		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("result.txt", true)))) {
+		    out.print(this.domain);
+			out.print(";");
+			out.print(this.urlString);
+			out.print(";");
 			for (int i = 0; i < this.Keywords.size(); i++)
-				resultline += "/ " + this.Keywords.get(i) + ":" + this.KeywordNodes.get(i).counter + "\n";
-			JsonStorage.get().setRawResult(JsonStorage.get().getRawResult() + resultline);
+				out.print("/ " + this.Keywords.get(i) + ":" + this.KeywordNodes.get(i).counter);
+			out.println();
+		}catch (IOException e) {
+		    //exception handling left as an exercise for the reader
 		}
-
-		if (false) {
-			try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("result.txt", true)))) {
-				out.print(this.domain);
-				out.print(";");
-				out.print(this.urlString);
-				out.print(";");
-				for (int i = 0; i < this.Keywords.size(); i++)
-					out.print("/ " + this.Keywords.get(i) + ":" + this.KeywordNodes.get(i).counter);
-				out.println();
-			} catch (IOException e) {
-				//exception handling left as an exercise for the reader
-			}
-		}
-
+		
+		
 		System.err.println(
 				"===========================================================Spider report============================================================");
 		System.out.println("==============URL======== \n" + this.urlString);
@@ -224,7 +214,6 @@ public class WebSpider {
 								}
 							}
 						}
-
 					}
 					
 					if (i > 0) {
@@ -271,17 +260,19 @@ public class WebSpider {
 				if (!candidateString[i].contains("http"))
 					candidateString[i] = prefix + domain + candidateString[i];
 
-				while (spiderEggs.size() < x // BFS
-						&& ProceeedURLPool.size() <= y && !URLPool.contains(candidateString[i])
-						&& !ProceeedURLPool.contains(candidateString[i])
-						&& !DeadLinkPool.contains(candidateString[i])
-						&& !hasSame(URLPool, candidateString[i])) {
-					URLPool.add(candidateString[i]);
-					if (URLPool.size() > 0 && spiderEggs.size() < x) {
-						//System.out.println(candidateString[i]);
-						spiderEggs.add(new WebSpider(candidateString[i], x, y));
-						ProceeedURLPool.add(URLPool.remove());
-						new WebSpider(candidateString[i], x, y).spiderRun(); // Now is DFS, to be changed into BFS
+				if (!hasSame(URLPool, candidateString[i])) {
+
+					while (spiderEggs.size() < x // BFS
+							&& ProceeedURLPool.size() <= y && !URLPool.contains(candidateString[i])
+							&& !ProceeedURLPool.contains(candidateString[i])
+							&& !DeadLinkPool.contains(candidateString[i])) {
+						URLPool.add(candidateString[i]);
+						if (URLPool.size() > 0 && spiderEggs.size() < x) {
+							//System.out.println(candidateString[i]);
+							spiderEggs.add(new WebSpider(candidateString[i], x, y));
+							ProceeedURLPool.add(URLPool.remove());
+							new WebSpider(candidateString[i], x, y).spiderRun(); // Now is DFS, to be changed into BFS
+						}
 					}
 				}
 			}
@@ -317,11 +308,22 @@ public class WebSpider {
 	}
 
 	private boolean hasSame(LinkedList<String> pool, String url) {
+		System.out.println("hasSame : " + url);
+		for (String poolUrl : pool) {
+
+			poolUrl = poolUrl.replaceFirst("http(s{0,1})://", "");
+			url = url.replaceFirst("http(s{0,1})://", "");
+			if (poolUrl.charAt(poolUrl.length() - 1) == '/') poolUrl = poolUrl.substring(0, poolUrl.length() - 1);
+			if (url.charAt(url.length() - 1) == '/') url = url.substring(0, url.length() - 1);
+			Loghelper.get().log(this.getClass().getSimpleName(), poolUrl + " vs. " + url);
+			if (poolUrl.toLowerCase().equals(url.toLowerCase())) return true;
+		}
 		return false;
 	}
 
 	/*
 	public static void main(String[] args) {
+		System.setProperty("wordnet.database.dir", "C:\\Users\\e4206692\\Desktop\\COMP4047\\dict");
 		WebSpider s = new WebSpider();
 		s.spiderRun();
 		System.out.println(
@@ -337,8 +339,8 @@ public class WebSpider {
 	*/
 
 	public void startSpider() {
-		WebSpider s = new WebSpider();
-		s.spiderRun();
+		System.setProperty("wordnet.database.dir", "C:\\Users\\e4206692\\Desktop\\COMP4047\\dict");
+		spiderRun();
 		System.out.println(
 				"\n\n\n================ Final Report " + DomainPool.size() + " domains visited=====================");
 		for (int i = 0; i < DomainPool.size(); i++)

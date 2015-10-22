@@ -1,5 +1,4 @@
 package Spider;
-
 import edu.smu.tspell.wordnet.*;
 
 public class WordChecker {
@@ -21,9 +20,4 @@ public class WordChecker {
 			return false;
 
 	}
-
-	public static void main(String args[]) {
-		System.out.println(isAWord("hong kong"));
-	}
-
 }

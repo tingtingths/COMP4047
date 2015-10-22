@@ -1,6 +1,5 @@
 package SearchEngine.API;
 
-import SearchEngine.JsonStorage;
 import SearchEngine.Loghelper;
 
 import javax.servlet.ServletException;
@@ -19,7 +18,7 @@ import java.util.regex.Pattern;
 // Path = "/search"
 public class RequestHandler extends HttpServlet {
 
-    private String resultFile = "C:\\Users\\e4206692\\Desktop\\COMP4047\\SpiderResult\\result.txt";
+    private String resultFile = "C:\\Users\\e4206692\\Desktop\\glassfish4\\glassfish\\domains\\domain1\\config\\result.txt";
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // do nothing... we don't handle POST request
@@ -32,8 +31,7 @@ public class RequestHandler extends HttpServlet {
 
         // get json
         long startTime = new Date().getTime();
-        if (JsonStorage.get().getJson().trim().isEmpty())
-            JsonStorage.get().setJson(processJson(keyword));
+        String json = processJson(keyword);
         long endTime = new Date().getTime();
 
         // return json to client
@@ -45,7 +43,7 @@ public class RequestHandler extends HttpServlet {
         out.write("json : " + json);
         */
         out.write("process time : " + (endTime - startTime) + " ms\n");
-        out.write(JsonStorage.get().getJson());
+        out.write(json);
     }
 
     private String parseQuery(String qString) {
@@ -74,12 +72,12 @@ public class RequestHandler extends HttpServlet {
         try {
             BufferedReader r = new BufferedReader(new FileReader(f));
             while ((line = r.readLine()) != null) {
-                //Loghelper.get().log(this.getClass().getSimpleName(), line);
                 String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - keywords
                 List<String> keywords = Arrays.asList(s[2].split("/ "));
                 for (String keyword : keywords) {
                     //Loghelper.get().log(this.getClass().getSimpleName(), keyword);
                     if (pattern.matcher(keyword).matches()) {
+                        Loghelper.get().log(this.getClass().getSimpleName(), line);
                         Loghelper.get().log(this.getClass().getSimpleName(), "match : " + key);
                         int weight = 1;
                         String[] keyWeight = keyword.split(":");
