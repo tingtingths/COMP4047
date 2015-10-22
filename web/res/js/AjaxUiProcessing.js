@@ -2,7 +2,7 @@
  * Created by Ting on 12/10/2015.
  */
 
-apiDomain = "https://tingths.tk:8181/spider/search"
+apiDomain = "http://158.182.6.129:8080/spider/search"
 var firstProcess = true;
 var result;
 var ptr = 0;
@@ -41,7 +41,7 @@ function search(ele) {
 
 				var json = req.responseText;
 				// arrange the result
-				//startUiProcess(json);
+				startUiProcess(json);
 			}
 		}
 
@@ -50,14 +50,15 @@ function search(ele) {
 		start_time = Date.now();
 		
 		// UI debug
-		startUiProcess();
+		//startUiProcess();
 	}
 }
 
 function startUiProcess(json) {
 	// reset the icon
 	document.getElementById("goBtn").src = "./res/img/goBtn.png";
-	console.log("Processing result...");
+	console.log("Processing json...");
+	console.log("json: " + json);
 
 	if (firstProcess) {
 		firstProcess = false;
