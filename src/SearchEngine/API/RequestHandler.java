@@ -1,5 +1,6 @@
 package SearchEngine.API;
 
+import SearchEngine.JsonStorage;
 import SearchEngine.Loghelper;
 
 import javax.servlet.ServletException;
@@ -17,6 +18,9 @@ import java.util.regex.Pattern;
  */
 // Path = "/search"
 public class RequestHandler extends HttpServlet {
+
+    private String resultFile = "C:\\Users\\e4206692\\Desktop\\COMP4047\\SpiderResult\\result.txt";
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // do nothing... we don't handle POST request
     }
@@ -28,7 +32,8 @@ public class RequestHandler extends HttpServlet {
 
         // get json
         long startTime = new Date().getTime();
-        String json = processJson(keyword);
+        if (JsonStorage.get().getJson().trim().isEmpty())
+            JsonStorage.get().setJson(processJson(keyword));
         long endTime = new Date().getTime();
 
         // return json to client
@@ -39,7 +44,8 @@ public class RequestHandler extends HttpServlet {
         out.write("Query string : " + keyword + "\n");
         out.write("json : " + json);
         */
-        out.write(json);
+        out.write("process time : " + (endTime - startTime) + " ms\n");
+        out.write(JsonStorage.get().getJson());
     }
 
     private String parseQuery(String qString) {
@@ -62,17 +68,19 @@ public class RequestHandler extends HttpServlet {
 
         // read WebSpider result file...
         //Loghelper.getInstance().log(this.getClass().getSimpleName(), System.getProperty("user.dir"));
-        File f = new File("C:\\Users\\e4206692\\Desktop\\FYP Server\\out\\result.txt");
+        File f = new File(resultFile);
         String line = "";
         Pattern pattern = Pattern.compile(".*" + key + ".*");
         try {
             BufferedReader r = new BufferedReader(new FileReader(f));
             while ((line = r.readLine()) != null) {
+                //Loghelper.get().log(this.getClass().getSimpleName(), line);
                 String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - keywords
                 List<String> keywords = Arrays.asList(s[2].split("/ "));
                 for (String keyword : keywords) {
                     //Loghelper.get().log(this.getClass().getSimpleName(), keyword);
                     if (pattern.matcher(keyword).matches()) {
+                        Loghelper.get().log(this.getClass().getSimpleName(), "match : " + key);
                         int weight = 1;
                         String[] keyWeight = keyword.split(":");
                         if (keyWeight.length > 1)
@@ -89,6 +97,7 @@ public class RequestHandler extends HttpServlet {
                     }
                 }
             }
+            r.close();
         } catch (IOException e) {}
 
         return json + "]";
