@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 // Path = "/search"
 public class RequestHandler extends HttpServlet {
 
-    private String resultFile = "C:\\Users\\e4206692\\Desktop\\glassfish4\\glassfish\\domains\\domain1\\config\\result.txt";
+    private String resultFile = "spiderResult.txt";
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // do nothing... we don't handle POST request
@@ -30,9 +30,8 @@ public class RequestHandler extends HttpServlet {
         Loghelper.get().log(this.getClass().getSimpleName(), keyword);
 
         // get json
-        long startTime = new Date().getTime();
+
         String json = processJson(keyword);
-        long endTime = new Date().getTime();
 
         // return json to client
         PrintWriter out = response.getWriter();
@@ -42,7 +41,7 @@ public class RequestHandler extends HttpServlet {
         out.write("Query string : " + keyword + "\n");
         out.write("json : " + json);
         */
-        out.write("process time : " + (endTime - startTime) + " ms\n");
+        //out.write("process time : " + (endTime - startTime) + " ms\n");
         out.write(json);
     }
 
@@ -59,6 +58,7 @@ public class RequestHandler extends HttpServlet {
     }
 
     private String processJson(String key) {
+        long startTime = new Date().getTime();
         String filePath = "";
         // local data format domain;url;/ k1:n/ k2:k ...
         String json = "[";
@@ -66,14 +66,14 @@ public class RequestHandler extends HttpServlet {
 
         // read WebSpider result file...
         //Loghelper.getInstance().log(this.getClass().getSimpleName(), System.getProperty("user.dir"));
-        File f = new File(resultFile);
+        File f = new File(System.getProperty("user.dir") + File.separator + resultFile);
         String line = "";
         Pattern pattern = Pattern.compile(".*" + key + ".*");
         try {
             BufferedReader r = new BufferedReader(new FileReader(f));
             while ((line = r.readLine()) != null) {
-                String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - keywords
-                List<String> keywords = Arrays.asList(s[2].split("/ "));
+                String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - title, s[3] - keywords
+                List<String> keywords = Arrays.asList(s[3].split("/ "));
                 for (String keyword : keywords) {
                     //Loghelper.get().log(this.getClass().getSimpleName(), keyword);
                     if (pattern.matcher(keyword).matches()) {
@@ -87,16 +87,19 @@ public class RequestHandler extends HttpServlet {
                             json += "{";
                             firstMatch = false;
                         } else {
-                            json += ",{";
+                            json += "{";
                         }
-                        json += "\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"weight\":\"" + weight + "\"";
+                        json += "\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"weight\":\"" + weight + "\"";
                         //Loghelper.get().log(this.getClass().getSimpleName(), keyword);
-                        json += "}";
+                        json += "},";
                     }
                 }
             }
             r.close();
         } catch (IOException e) {}
+        long endTime = new Date().getTime();
+
+        json += "{\"ms\" : \"" + (endTime - startTime) + "\"}";
 
         return json + "]";
     }
