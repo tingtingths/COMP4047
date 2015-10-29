@@ -60,7 +60,7 @@ public class RequestHandler extends HttpServlet {
     private String processJson(String key) {
         long startTime = new Date().getTime();
         String filePath = "";
-        // local data format domain;url;/ k1:n/ k2:k ...
+        // local data format -> domain;url;title;/ k1:n/ k2:k ...
         String json = "[";
         boolean firstMatch = true;
 
@@ -68,31 +68,28 @@ public class RequestHandler extends HttpServlet {
         //Loghelper.getInstance().log(this.getClass().getSimpleName(), System.getProperty("user.dir"));
         File f = new File(System.getProperty("user.dir") + File.separator + resultFile);
         String line = "";
-        Pattern pattern = Pattern.compile(".*" + key + ".*");
+        Pattern pattern = Pattern.compile(".*" + key + ".*", Pattern.CASE_INSENSITIVE);
         try {
             BufferedReader r = new BufferedReader(new FileReader(f));
-            while ((line = r.readLine()) != null) {
+            while ((line = r.readLine()) != null) { // for every url
+                int weight = 1;
+                boolean match = false;
                 String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - title, s[3] - keywords
                 List<String> keywords = Arrays.asList(s[3].split("/ "));
+                if (pattern.matcher(s[2]).matches()) {
+                    weight += 10;
+                    match = true;
+                }
                 for (String keyword : keywords) {
-                    //Loghelper.get().log(this.getClass().getSimpleName(), keyword);
+                    String[] keyWeight = keyword.split(":");
                     if (pattern.matcher(keyword).matches()) {
-                        Loghelper.get().log(this.getClass().getSimpleName(), line);
-                        Loghelper.get().log(this.getClass().getSimpleName(), "match : " + key);
-                        int weight = 1;
-                        String[] keyWeight = keyword.split(":");
                         if (keyWeight.length > 1)
-                            weight = Integer.valueOf(keyWeight[1]);
-                        if (firstMatch) {
-                            json += "{";
-                            firstMatch = false;
-                        } else {
-                            json += "{";
-                        }
-                        json += "\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"weight\":\"" + weight + "\"";
-                        //Loghelper.get().log(this.getClass().getSimpleName(), keyword);
-                        json += "},";
+                            weight += Integer.valueOf(keyWeight[1]);
+                        match = true;
                     }
+                }
+                if (match) {
+                    json += "{\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"weight\":\"" + weight + "\"},";
                 }
             }
             r.close();
@@ -103,4 +100,16 @@ public class RequestHandler extends HttpServlet {
 
         return json + "]";
     }
+    /*
+                        Loghelper.get().log(this.getClass().getSimpleName(), line);
+                        Loghelper.get().log(this.getClass().getSimpleName(), "match : " + key);
+                        int weight = 1;
+                        String[] keyWeight = keyword.split(":");
+                        if (keyWeight.length > 1)
+                            weight = Integer.valueOf(keyWeight[1]);
+                        json += "{";
+                        json += "\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"weight\":\"" + weight + "\"";
+                        //Loghelper.get().log(this.getClass().getSimpleName(), keyword);
+                        json += "},";
+     */
 }

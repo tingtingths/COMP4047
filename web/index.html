@@ -9,13 +9,19 @@
 		<span id="timeTaken"></span>
 		<span id="bkgBottom"></span>
 		<span id="bkgTop"></span>
+		<span id="whiteCover"></span>
 		<div id="searchContainer">
 			<div id="searchWrapper">
-				<input type="text" onfocus="inputOnFocus()" onblur="inputOnBlur()" onkeydown="search(this)" maxlength="1024" id="textField">
+				<input type="text" autofocus onfocus="inputOnFocus()" onblur="inputOnBlur()" onkeydown="search(this)" maxlength="1024" id="textField">
 				<img id="goBtn" onclick="search(this)" src="./res/img/goBtn.png"/>
 			</div>
 		</div>
 		<div id="resultContainer">
+			<div id="results">
+				<div class="result">
+				</div>
+			</div>
+			<button id="moreBtn" onclick="appendResult()">More</button>
 		</div>
 		<div class="myFooter"><span onclick="changeBkg()">COMP4047 Project</span></div>
 	</body>

@@ -8,11 +8,11 @@ import java.util.regex.*;
 
 import java.io.*;
 
-public class WebSpider {
+public class WebSpider extends Thread {
 	public static final int DemoX = 10; // URL pool size
 	public static final int DemoY = 100; // Processed URL pool size
 	public static final String prefix = "http://";
-	public static final String DemoURLString = "http://buwww.hkbu.edu.hk/eng/main/index.jsp";
+	public static final String DemoURLString = "http://www.hku.hk";
 	public static final Pattern hrefPattern = Pattern.compile("href=\"(.*?)\"");
 	public static final String[] URLException = { ".pdf", "..", ".gif", ".png", ".jpg", ".ico", "javascript", "mailto",
 			".css" };
@@ -21,7 +21,7 @@ public class WebSpider {
 			"doing", "be", "return", "var", "please", "will", "well", "over", "size", "its", "need", "sin", "known",
 			"means", "true", "false", "tai","nothing","can" };
 	public static final String[] KeywordTag = { "<title", "<p", "<li", "<div", "<a", "<h", "<meta name=", "<menu", "<td","<u" };
-	public static LinkedList<String> ProceeedURLPool;
+	public static LinkedList<String> ProceeedURLPool = new LinkedList<>();
 	public static LinkedList<String> DomainPool = new LinkedList<>();
 
 	private LinkedList<String> URLPool; // Stores the links find in current page
@@ -40,6 +40,8 @@ public class WebSpider {
 	private int y;
 	private final int DomainKeywordRanking = 40;
 
+	private int generation = 0;
+
 	public WebSpider() { // Demo constructor
 		urlString = DemoURLString;
 		try {
@@ -48,7 +50,6 @@ public class WebSpider {
 			System.out.println("Domain: " + domain);
 			x = DemoX;
 			y = DemoY;
-			ProceeedURLPool = URLPoolStorage.get().pool;
 			URLPool = new LinkedList<>();
 			Keywords = new LinkedList<>();
 			spiderEggs = new LinkedList<>();
@@ -58,14 +59,14 @@ public class WebSpider {
 		}
 	}
 
-	public WebSpider(String inputURL, int X, int Y) {
+	public WebSpider(String inputURL, int X, int Y, int generation) {
 		urlString = inputURL;
 		try {
 			url = new URL(urlString);
 			domain = getDomain(inputURL);
 			x = X;
 			y = Y;
-			ProceeedURLPool = URLPoolStorage.get().pool;
+			this.generation = generation;
 			URLPool = new LinkedList<>();
 			Keywords = new LinkedList<>();
 			spiderEggs = new LinkedList<>();
@@ -106,6 +107,7 @@ public class WebSpider {
 	}
 
 	public boolean spiderRun() {
+		Loghelper.get().log(this.getClass().getSimpleName(), "Gen: " + generation + ", pool #:" + ProceeedURLPool.size() + ", Processing: " + url);
 		String[] strs = domain.split("\\.");
 
 		if (strs.length > 1) {
@@ -126,12 +128,14 @@ public class WebSpider {
 		}
 		BufferedReader in = null;
 		try {
-			in = new BufferedReader(new InputStreamReader(url.openStream()));
+			URLConnection con = url.openConnection();
+			con.setConnectTimeout(10 * 1000); // 10 seconds
+			in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 			String currentLine;
 			boolean reachBody = false;
 			while ((currentLine = in.readLine()) != null) {
 				if (currentLine.contains("<title>ERROR: The requested URL could not be retrieved</title>")) {
-					System.err.println("A spider died accidentally due to error page... RIP");
+					System.err.println("A spider died accidently due to error page... RIP");
 					return isSuccessful;
 				}
 				// Extract title
@@ -151,11 +155,11 @@ public class WebSpider {
 			in.close();
 			isSuccessful = true;
 			//spiderReproduce(); //BFS
-			System.out.println("A spider died peacefully... RIP");
+			//System.out.println("A spider died peacefully... RIP");
 
 			spiderReport();
 		} catch (IOException e) {
-			System.err.println("\nA spider died accidentally due to IOException... RIP");
+			//System.err.println("\nA spider died accidently due to IOException... RIP");
 			return isSuccessful;
 		}
 		return isSuccessful;
@@ -245,23 +249,95 @@ public class WebSpider {
 				if (!candidateString[i].contains("http"))
 					candidateString[i] = prefix + domain + candidateString[i];
 
-				while (spiderEggs.size() < x // BFS
-						&& ProceeedURLPool.size() <= y && !URLPool.contains(candidateString[i])
-						&& !ProceeedURLPool.contains(candidateString[i])
-						&& !DeadLinkPool.contains(candidateString[i])
-						&& !hasSame(ProceeedURLPool, candidateString[i])) {
-					URLPool.add(candidateString[i]);
-					Loghelper.get().log(this.getClass().getSimpleName(), "pool size : " + URLPool.size());
-					if (URLPool.size() > 0 && spiderEggs.size() < x) {
-						//System.out.println(candidateString[i]);
-						spiderEggs.add(new WebSpider(candidateString[i], x, y));
-						ProceeedURLPool.add(URLPool.remove());
-						new WebSpider(candidateString[i], x, y).spiderRun(); // Now is DFS, to be changed into BFS
+				// handle url redirection
+				String redirectedURL = getRedirected(candidateString[i]);
+
+				if (!hasSame(ProceeedURLPool, redirectedURL)) {
+
+					while (spiderEggs.size() < x // BFS
+							&& ProceeedURLPool.size() <= y && !URLPool.contains(redirectedURL)
+							&& !ProceeedURLPool.contains(redirectedURL)
+							&& !DeadLinkPool.contains(redirectedURL)) {
+						URLPool.add(redirectedURL);
+						if (URLPool.size() > 0 && spiderEggs.size() < x) {
+							spiderEggs.add(new WebSpider(redirectedURL, x, y, generation + 1));
+							ProceeedURLPool.add(URLPool.remove());
+							//new WebSpider(redirectedURL, x, y, generation + 1).spiderRun(); // single thread
+							new WebSpider(redirectedURL, x, y, generation + 1).start(); // Now is DFS, to be changed into BFS
+						}
 					}
 				}
 			}
 		}
 	}
+
+	private String getRedirected(String url) {
+		String target = "";
+
+		try {
+			URLConnection con = new URL(url).openConnection();
+			InputStream is = con.getInputStream();
+			con.connect();
+			int code = ((HttpURLConnection) con).getResponseCode();
+			BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+
+			// get redirect url
+			target = con.getURL().toString(); // default
+
+			String content = "";
+			String line;
+			while ((line = br.readLine()) != null) {
+				content += line;
+			}
+
+			// check if status 3xx
+			if (code == HttpURLConnection.HTTP_MOVED_TEMP
+					|| code == HttpURLConnection.HTTP_MOVED_PERM
+					|| code == HttpURLConnection.HTTP_SEE_OTHER) {
+				target = con.getHeaderField("Location");
+			}
+
+			// replace "
+			content = content.replaceAll("\"", "");
+			//System.out.println(content);
+			// check if meta refresh
+			Matcher m = Pattern.compile(".*<meta.*http-equiv=refresh.*>.*", Pattern.CASE_INSENSITIVE).matcher(content);
+			if (m.matches()) { // has meta refresh, grab url
+				m = Pattern.compile(".*<meta.*url=(.*).*>.*", Pattern.CASE_INSENSITIVE).matcher(content);
+				if (m.matches()) {
+					target = m.group(1);
+				}
+			}
+
+			br.close();
+
+			if (!target.equals(url)) { // recursively follows redirection
+				System.out.println(url + " -> " + target);
+				return getRedirected(target);
+			} else {
+				return target;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return url;
+		}
+	}
+
+	private boolean hasSame(LinkedList<String> pool, String url) {
+		for (String poolUrl : pool) {
+
+			poolUrl = poolUrl.replaceFirst("http(s{0,1})://", "");
+			url = url.replaceFirst("http(s{0,1})://", "");
+			if (poolUrl.charAt(poolUrl.length() - 1) == '/') poolUrl = poolUrl.substring(0, poolUrl.length() - 1);
+			if (url.charAt(url.length() - 1) == '/') url = url.substring(0, url.length() - 1);
+			if (poolUrl.toLowerCase().equals(url.toLowerCase())) {
+				System.out.println("hasSame: " + url);
+				return true;
+			}
+		}
+		return false;
+	}
+
 
 	private String[] getCandidateURLString(String currentLine) {
 		if (currentLine.contains("<a href")) {
@@ -291,43 +367,6 @@ public class WebSpider {
 		return isIn;
 	}
 
-	private boolean hasSame(LinkedList<String> pool, String url) {
-		//Loghelper.get().log(this.getClass().getSimpleName(), pool.size() + "--------------------------------------------------------");
-		//Loghelper.get().log(this.getClass().getSimpleName(), "url : " + url);
-		URL testURL;
-		try {
-			testURL = new URL(url);
-
-			for (String poolUrl : pool) {
-				//Loghelper.get().log(this.getClass().getSimpleName(), "		: " + pool);
-
-				URL targetURL = new URL(poolUrl);
-				if (targetURL.getHost().toLowerCase().equals(testURL.getHost().toLowerCase())
-						&& targetURL.getHost().toLowerCase().equals(testURL.getHost().toLowerCase())) {
-					return true;
-				}
-			}
-		} catch (MalformedURLException e) { }
-		return false;
-	}
-
-	/*
-	public static void main(String[] args) {
-		System.setProperty("wordnet.database.dir", "C:\\Users\\e4206692\\Desktop\\COMP4047\\dict");
-		WebSpider s = new WebSpider();
-		s.spiderRun();
-		System.out.println(
-				"\n\n\n================ Final Report " + DomainPool.size() + " domains visited=====================");
-		for (int i = 0; i < DomainPool.size(); i++)
-			System.out.println(DomainPool.get(i));
-		System.out.println();
-		System.out.println("The number of webside has visited: " + ProceeedURLPool.size());
-		for (int i = 0; i < ProceeedURLPool.size(); i++)
-			System.out.println(ProceeedURLPool.get(i));
-		System.out.println("===========================================");
-	}
-	*/
-
 	private void spiderReport() {
 		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(System.getProperty("user.dir") + File.separator + "spiderResult.txt", true)))) {
 			out.print(this.domain);
@@ -352,6 +391,27 @@ public class WebSpider {
 			System.out.print("/ " + this.Keywords.get(i) + ":" + this.KeywordNodes.get(i).counter);
 		System.err.println(
 				"\n=====================================================================================================================================");
+	}
+
+	/*
+	public static void main(String[] args) {
+		System.setProperty("wordnet.database.dir", "C:\\Users\\e4206692\\Desktop\\COMP4047\\dict");
+		WebSpider s = new WebSpider();
+		s.spiderRun();
+		System.out.println(
+				"\n\n\n================ Final Report " + DomainPool.size() + " domains visited=====================");
+		for (int i = 0; i < DomainPool.size(); i++)
+			System.out.println(DomainPool.get(i));
+		System.out.println();
+		System.out.println("The number of webside has visited: " + ProceeedURLPool.size());
+		for (int i = 0; i < ProceeedURLPool.size(); i++)
+			System.out.println(ProceeedURLPool.get(i));
+		System.out.println("===========================================");
+	}
+	*/
+
+	public void run() {
+		spiderRun();
 	}
 
 	public void startSpider() {

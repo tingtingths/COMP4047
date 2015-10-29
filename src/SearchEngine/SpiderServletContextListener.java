@@ -11,28 +11,22 @@ import java.util.Date;
  */
 public class SpiderServletContextListener implements ServletContextListener {
 
-    private Thread t;
-
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
-        Loghelper.get().log(this.getClass().getSimpleName(), "context initialized... starting spider");
+        Loghelper.get().log(this.getClass().getSimpleName(), "context initialized...");
 
         long startTime = new Date().getTime();
         boolean run = true;
+        Loghelper.get().log(this.getClass().getSimpleName(), "Searching spiderResult.txt @ " + System.getProperty("user.dir"));
         if (new File(System.getProperty("user.dir") + File.separator + "spiderResult.txt").exists()) run = false;
         if (run) {
             Loghelper.get().log(this.getClass().getSimpleName(), "running spider");
             System.setProperty("wordnet.database.dir", "/home/ting/Workspace/COMP4047 Project/dict/");
-             t = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    WebSpider spider = new WebSpider(); // demo constructor
-                    spider.startSpider();
-                }
-            });
-            t.start();
+            WebSpider spider = new WebSpider(); // demo constructor
+            spider.startSpider();
+            spider.start();
             try {
-                t.join();
+                spider.join();
             } catch (InterruptedException e) { e.printStackTrace(); }
         }
         long endTime = new Date().getTime();
