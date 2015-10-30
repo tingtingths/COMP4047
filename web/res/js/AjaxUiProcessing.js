@@ -9,6 +9,7 @@ var ptr = 0;
 var appendStep = 5;
 var sortedResult = [];
 var appendLimit = 15; // 15 items per page
+var appendCount = 1;
 
 function search(ele) {
 	// debug calulate processing time
@@ -68,7 +69,7 @@ function startUiProcess(json) {
 			sortedResult.push(result);
 		} else {
 			var count = results.length - 1;
-			document.getElementById("timeTaken").innerHTML = count + " results, " + results[i]["ms"] + " ms";
+			document.getElementById("timeTaken").innerHTML = count + " results in " + results[i]["ms"] + " ms";
 		}
 	}
 	// descending
@@ -79,25 +80,39 @@ function startUiProcess(json) {
 	if (firstProcess) {
 		firstProcess = false;
 		document.getElementById("searchContainer").style.top = "0%";
-		//document.getElementById("textField").style.width = "800px";
 		document.getElementById("textField").blur();
 		document.getElementById("textField").style.background = "none";
 		document.getElementById("searchContainer").style.background = "white";
 		document.getElementById("bkgTop").className = "backgroundBlur";
 		document.getElementById("bkgBottom").className = "backgroundBlur";
 		document.getElementById("whiteCover").style.opacity = "1";
-		document.getElementById("resultContainer").style.opacity = "1";
+		document.getElementById("lower").style.opacity = "1";
 		document.getElementsByClassName("myFooter")[0].style.display = "none";
 	}
 	// process json
 	//....
 
+	appendCount = 0;
 	appendResult();
 }
 
 function appendResult() {
+	var dummyText = "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. "
+					+ "Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, "
+					+ "pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate";
 	var count = 0;
 	var container = document.getElementById("results");
+
+	if (appendCount > 0) { // append separator
+		var separator = document.createElement("div");
+		separator.className = "separator";
+		separator.name = "page" + Number(appendCount + 1);
+		var span = document.createElement("span");
+		span.innerHTML = "Page " + Number(appendCount + 1);
+		separator.appendChild(span);
+		container.appendChild(separator);
+	}
+
 	// create result element and append into resultContainer
 	for (var i in sortedResult) {
 		if (count < appendLimit) {
@@ -106,8 +121,11 @@ function appendResult() {
 			var url = result["url"];
 			var title = result["title"];
 			var weight = result["weight"];
+
+			// set result element
 			var eleResult = document.createElement("div");
 			eleResult.className = "result";
+			eleResult.setAttribute("onclick", "window.open('" + url + "', '_blank')");
 
 			// set title
 			var eleTitle = document.createElement("a");
@@ -123,19 +141,24 @@ function appendResult() {
 			// set weight
 			var eleWeight = document.createElement("span");
 			eleWeight.className = "resultWeight";
-			eleWeight.innerHTML = "[" + weight + "]";
+			eleWeight.innerHTML = " [" + weight + "]";
 
 			// set cite
 			var eleUrl = document.createElement("cite");
 			eleUrl.className = "resultCite";
 			eleUrl.innerHTML = url;
 
+			// set abstract
+			var eleAbs = document.createElement("p");
+			eleAbs.className = "resultAbstract";
+			eleAbs.innerHTML = dummyText;
+
 			// append elements
 			eleResult.appendChild(eleTitle);
 			eleResult.appendChild(eleWeight);
 			eleResult.appendChild(document.createElement("br")); // new line
 			eleResult.appendChild(eleUrl);
-			eleResult.appendChild(document.createElement("br")); // new line
+			eleResult.appendChild(eleAbs);
 			container.appendChild(eleResult);
 
 			count += 1;
@@ -153,6 +176,8 @@ function appendResult() {
 	} else {
 		document.getElementById("moreBtn").style.display = "none";
 	}
+
+	appendCount += 1;
 }
 
 function inputOnFocus() {

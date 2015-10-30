@@ -16,12 +16,16 @@
 				<img id="goBtn" onclick="search(this)" src="./res/img/goBtn.png"/>
 			</div>
 		</div>
-		<div id="resultContainer">
-			<div id="results">
-				<div class="result">
+		<div id="lower">
+			<div id="pagesContainer"></div>
+			<div id="resultContainer">
+				<div id="results">
+					<div class="result">
+					</div>
 				</div>
+				<button id="moreBtn" onclick="appendResult()">More</button>
+				<br>
 			</div>
-			<button id="moreBtn" onclick="appendResult()">More</button>
 		</div>
 		<div class="myFooter"><span onclick="changeBkg()">COMP4047 Project</span></div>
 	</body>
