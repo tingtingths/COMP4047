@@ -1,6 +1,7 @@
 package SearchEngine.API;
 
 import SearchEngine.Loghelper;
+import SearchEngine.Settings;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -18,8 +19,6 @@ import java.util.regex.Pattern;
 // Path = "/search"
 public class RequestHandler extends HttpServlet {
 
-    private String resultFile = "spiderResult.txt";
-
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // do nothing... we don't handle POST request
     }
@@ -27,7 +26,7 @@ public class RequestHandler extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String query = request.getQueryString();
         String keyword = parseQuery(query);
-        Loghelper.get().log(this.getClass().getSimpleName(), keyword);
+        Loghelper.log(this.getClass().getSimpleName(), keyword);
 
         // get json
 
@@ -66,7 +65,7 @@ public class RequestHandler extends HttpServlet {
 
         // read WebSpider result file...
         //Loghelper.getInstance().log(this.getClass().getSimpleName(), System.getProperty("user.dir"));
-        File f = new File(System.getProperty("user.dir") + File.separator + resultFile);
+        File f = new File(Settings.workingDir + "spiderResult.txt");
         String line = "";
         Pattern pattern = Pattern.compile(".*" + key + ".*", Pattern.CASE_INSENSITIVE);
         try {

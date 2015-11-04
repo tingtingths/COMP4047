@@ -8,11 +8,13 @@ import java.util.regex.*;
 
 import java.io.*;
 
+import SearchEngine.Settings;
+
 public class WebSpider extends Thread {
 	public static final int DemoX = 10; // URL pool size
 	public static final int DemoY = 100; // Processed URL pool size
 	public static final String prefix = "http://";
-	public static final String DemoURLString = "http://www.hku.hk";
+	//public static final String DemoURLString = ""; // read from SearchEngine.Settings class
 	public static final Pattern hrefPattern = Pattern.compile("href=\"(.*?)\"");
 	public static final String[] URLException = { ".pdf", "..", ".gif", ".png", ".jpg", ".ico", "javascript", "mailto",
 			".css" };
@@ -43,10 +45,10 @@ public class WebSpider extends Thread {
 	private int generation = 0;
 
 	public WebSpider() { // Demo constructor
-		urlString = DemoURLString;
+		urlString = Settings.initURL;;
 		try {
 			url = new URL(urlString);
-			domain = getDomain(DemoURLString);
+			domain = getDomain(urlString);
 			System.out.println("Domain: " + domain);
 			x = DemoX;
 			y = DemoY;
@@ -107,7 +109,7 @@ public class WebSpider extends Thread {
 	}
 
 	public boolean spiderRun() {
-		Loghelper.get().log(this.getClass().getSimpleName(), "Gen: " + generation + ", pool #:" + ProceeedURLPool.size() + ", Processing: " + url);
+		Loghelper.log(this.getClass().getSimpleName(), "Gen: " + generation + ", pool #:" + ProceeedURLPool.size() + ", Processing: |" + url + "|");
 		String[] strs = domain.split("\\.");
 
 		if (strs.length > 1) {
@@ -141,27 +143,30 @@ public class WebSpider extends Thread {
 				// Extract title
 				Matcher m = Pattern.compile(".*<title>(.*)</title>.*").matcher(currentLine);
 				if (title.trim().isEmpty() && m.matches()) {
-					Loghelper.get().log("grab title", urlString + " -> " + currentLine);
+					Loghelper.log("grab title", urlString + " -> " + currentLine);
 					title = m.group(1);
 				}
 				// Extract keywords
+				//Loghelper.log(this.getClass().getSimpleName(), "Gen: " + generation + ", pool #:" + ProceeedURLPool.size() + ", Extracting keywords |" + url + "|");
 				extractKeywords(currentLine);
 				// Extract hyperlinks
 				if (!reachBody && currentLine.contains("</head>"))
 					reachBody = true;
-				if (reachBody)
+				if (reachBody) {
+					//Loghelper.log(this.getClass().getSimpleName(), "Gen: " + generation + ", pool #:" + ProceeedURLPool.size() + ", Extracting links |" + url + "|");
 					extractHyperlinks(currentLine);
+				}
 			}
 			in.close();
 			isSuccessful = true;
 			//spiderReproduce(); //BFS
 			//System.out.println("A spider died peacefully... RIP");
-
-			spiderReport();
 		} catch (IOException e) {
-			//System.err.println("\nA spider died accidently due to IOException... RIP");
-			return isSuccessful;
+			Loghelper.logE(this.getClass().getSimpleName(), "Gen: " + generation + ", pool #:" + ProceeedURLPool.size() + ", Exception " + e.getCause() + " |" + url + "|");
 		}
+		Loghelper.log(this.getClass().getSimpleName(), "Gen: " + generation + ", pool #:" + ProceeedURLPool.size() + ", Reporting |" + url + "|");
+		spiderReport();
+		Loghelper.log(this.getClass().getSimpleName(), "Gen: " + generation + ", pool #:" + ProceeedURLPool.size() + ", Done |" + url + "|");
 		return isSuccessful;
 	}
 
@@ -250,21 +255,20 @@ public class WebSpider extends Thread {
 					candidateString[i] = prefix + domain + candidateString[i];
 
 				// handle url redirection
-				String redirectedURL = getRedirected(candidateString[i]);
+				//String redirectedURL = getRedirected(candidateString[i]);
+				String redirectedURL = candidateString[i]; // skip redirection check, too slow
 
-				if (!hasSame(ProceeedURLPool, redirectedURL)) {
-
-					while (spiderEggs.size() < x // BFS
-							&& ProceeedURLPool.size() <= y && !URLPool.contains(redirectedURL)
-							&& !ProceeedURLPool.contains(redirectedURL)
-							&& !DeadLinkPool.contains(redirectedURL)) {
-						URLPool.add(redirectedURL);
-						if (URLPool.size() > 0 && spiderEggs.size() < x) {
-							spiderEggs.add(new WebSpider(redirectedURL, x, y, generation + 1));
-							ProceeedURLPool.add(URLPool.remove());
-							//new WebSpider(redirectedURL, x, y, generation + 1).spiderRun(); // single thread
-							new WebSpider(redirectedURL, x, y, generation + 1).start(); // Now is DFS, to be changed into BFS
-						}
+				while (spiderEggs.size() < x // BFS
+						&& ProceeedURLPool.size() <= y && !URLPool.contains(redirectedURL)
+						&& !ProceeedURLPool.contains(redirectedURL)
+						&& !DeadLinkPool.contains(redirectedURL)
+						&& !hasSame(ProceeedURLPool, formatURL(redirectedURL))) {
+					URLPool.add(redirectedURL);
+					if (URLPool.size() > 0 && spiderEggs.size() < x) {
+						spiderEggs.add(new WebSpider(redirectedURL, x, y, generation + 1));
+						ProceeedURLPool.add(formatURL(URLPool.remove())); // format the url (shorten the url checking time) and put it in pool
+						new WebSpider(redirectedURL, x, y, generation + 1).spiderRun(); // single thread
+						//new WebSpider(redirectedURL, x, y, generation + 1).start(); // Now is DFS, to be changed into BFS
 					}
 				}
 			}
@@ -325,17 +329,21 @@ public class WebSpider extends Thread {
 
 	private boolean hasSame(LinkedList<String> pool, String url) {
 		for (String poolUrl : pool) {
-
-			poolUrl = poolUrl.replaceFirst("http(s{0,1})://", "");
-			url = url.replaceFirst("http(s{0,1})://", "");
-			if (poolUrl.charAt(poolUrl.length() - 1) == '/') poolUrl = poolUrl.substring(0, poolUrl.length() - 1);
-			if (url.charAt(url.length() - 1) == '/') url = url.substring(0, url.length() - 1);
+			//System.out.println("hasSame |" + poolUrl + "| vs. |" + url + "|");
 			if (poolUrl.toLowerCase().equals(url.toLowerCase())) {
 				System.out.println("hasSame: " + url);
 				return true;
 			}
 		}
+		System.out.println("noSame: " + url);
 		return false;
+	}
+
+	private String formatURL(String url) {
+		url = url.replaceFirst("http(s{0,1})://", "");
+		if (url.charAt(url.length() - 1) == '/')
+			url = url.substring(0, url.length() - 1);
+		return url;
 	}
 
 
@@ -368,7 +376,7 @@ public class WebSpider extends Thread {
 	}
 
 	private void spiderReport() {
-		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(System.getProperty("user.dir") + File.separator + "spiderResult.txt", true)))) {
+		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(Settings.workingDir + "spiderResult.txt", true)))) {
 			out.print(this.domain);
 			out.print(";");
 			out.print(this.urlString);

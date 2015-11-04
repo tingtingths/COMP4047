@@ -13,15 +13,20 @@ public class SpiderServletContextListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
-        Loghelper.get().log(this.getClass().getSimpleName(), "context initialized...");
+        Loghelper.log(this.getClass().getSimpleName(), "context initialized...");
 
         long startTime = new Date().getTime();
         boolean run = true;
-        Loghelper.get().log(this.getClass().getSimpleName(), "Searching spiderResult.txt @ " + System.getProperty("user.dir"));
-        if (new File(System.getProperty("user.dir") + File.separator + "spiderResult.txt").exists()) run = false;
+
+        if (!new File(Settings.workingDir).exists()) {
+            new File(Settings.workingDir).mkdir();
+        }
+
+        Loghelper.log(this.getClass().getSimpleName(), "Searching spiderResult.txt @ " + Settings.workingDir);
+        if (new File(Settings.workingDir + "spiderResult.txt").exists()) run = false;
         if (run) {
-            Loghelper.get().log(this.getClass().getSimpleName(), "running spider");
-            System.setProperty("wordnet.database.dir", "/home/ting/Workspace/COMP4047 Project/dict/");
+            Loghelper.log(this.getClass().getSimpleName(), "running spider");
+            System.setProperty("wordnet.database.dir", Settings.dictDir);
             WebSpider spider = new WebSpider(); // demo constructor
             spider.startSpider();
             spider.start();
@@ -30,7 +35,7 @@ public class SpiderServletContextListener implements ServletContextListener {
             } catch (InterruptedException e) { e.printStackTrace(); }
         }
         long endTime = new Date().getTime();
-        Loghelper.get().log(this.getClass().getSimpleName(), "spider finish, time taken : " + (endTime - startTime) + " ms");
+        Loghelper.log(this.getClass().getSimpleName(), "spider finish, time taken : " + (endTime - startTime) + " ms");
     }
 
 
