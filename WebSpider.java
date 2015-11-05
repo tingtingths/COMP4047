@@ -24,9 +24,7 @@ public class WebSpider {
 	public static LinkedList<String> ProceeedURLPool = new LinkedList<>();
 	public static LinkedList<String> DomainPool = new LinkedList<>();
 	public static LinkedList<String> DeadLinkPool = new LinkedList<>(); // Stores
-																		// the
-																		// Dead
-																		// links
+																		// the																// links
 	private String urlString; // URL string of current page
 	private URL url; // URL object of current page
 	private String domain; // domain of current page
@@ -249,7 +247,7 @@ public class WebSpider {
 				if (!candidateString[i].contains("http"))
 					candidateString[i] = prefix + domain + candidateString[i];
 
-				while (spiderEggs.size() < x // BFS
+				while (spiderEggs.size() < x 
 						&& ProceeedURLPool.size() <= y && !URLPool.contains(candidateString[i])
 						&& !ProceeedURLPool.contains(candidateString[i])
 						&& !DeadLinkPool.contains(candidateString[i])) {
@@ -326,7 +324,7 @@ public class WebSpider {
 		for (int i = 0; i < DomainPool.size(); i++)
 			System.out.println(DomainPool.get(i));
 		System.out.println();
-		System.out.println("The number of webside has visited: " + ProceeedURLPool.size());
+		System.out.println("These websides have been visited: ");
 		for (int i = 0; i < ProceeedURLPool.size(); i++)
 			System.out.println(ProceeedURLPool.get(i));
 		System.out.println("===========================================");
