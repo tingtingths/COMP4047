@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 // Path = "/search"
 public class RequestHandler extends HttpServlet {
 
-    private String pat = "[(](.+) (AND|OR) (.+)[)]"; // search for ((?) (AND or OR ?) (?)), ? = capture
+    private String pat = "\((\(.+\)|[^()]) (AND|OR) (\(.+\)|[^()])\)"; // search for ((?) (AND or OR ?) (?)), ? = capture
     private Pattern pattern;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
