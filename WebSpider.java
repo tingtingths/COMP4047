@@ -1,8 +1,3 @@
-package Spider;
-
-import SearchEngine.Loghelper;
-import SearchEngine.Settings;
-
 import java.net.*;
 import java.util.LinkedList;
 import java.util.Scanner;
@@ -29,11 +24,7 @@ public class WebSpider {
 	public static LinkedList<String> ProceeedURLPool = new LinkedList<>();
 	public static LinkedList<String> DomainPool = new LinkedList<>();
 	public static LinkedList<String> DeadLinkPool = new LinkedList<>(); // Stores
-																		// the
-																		// Dead
-																		// links
-	private String title = "";
-	private String bodyAbstract = "";
+																		// the																// links
 	private String urlString; // URL string of current page
 	private URL url; // URL object of current page
 	private String domain; // domain of current page
@@ -41,11 +32,11 @@ public class WebSpider {
 	private int y;
 	private boolean inputOk = false;
 	private LinkedList<String> URLPool; // Stores the links find in current page
-	private LinkedList<String> Keywords;
+	private LinkedList<String> Keywords; 
 	private LinkedList<KeywordNode> KeywordNodes; // Stores the keywords of current page
 	private LinkedList<WebSpider> spiderEggs;
-
-
+					
+					
 	public WebSpider() { // Demo constructor
 		urlString = DemoURLString;
 		try {
@@ -139,18 +130,8 @@ public class WebSpider {
 			boolean reachBody = false;
 			while ((currentLine = in.readLine()) != null) {
 				if (currentLine.contains("<title>ERROR: The requested URL could not be retrieved</title>")) {
-					System.err.println("A spider died accidentally due to error page... RIP");
+					System.err.println("A spider died accidently due to error page... RIP");
 					return isSuccessful;
-				}
-				// Extract title
-				Matcher titleMatcher = Pattern.compile(".*<title>(.*)</title>.*").matcher(currentLine);
-				if (title.trim().isEmpty() && titleMatcher.matches()) {
-					Loghelper.log("grab title", urlString + " -> " + currentLine);
-					title = titleMatcher.group(1);
-				}
-				Matcher bodyMatcher = Pattern.compile(".*<body>(.{0,150}).*").matcher(currentLine);
-				if (bodyMatcher.matches()) {
-					bodyAbstract = bodyMatcher.group(1);
 				}
 				// Extract keywords
 				extractKeywords(currentLine);
@@ -166,22 +147,18 @@ public class WebSpider {
 
 			spiderReport();
 		} catch (IOException e) {
-			System.err.println("\nA spider died accidentally due to IOException... RIP");
+			System.err.println("\nA spider died accidently due to IOException... RIP");
 			return isSuccessful;
 		}
 		return isSuccessful;
 	}
 
 	private void spiderReport() {
-		try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(Settings.workingDir + "spiderResult.txt", true)))) {
+		try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("result.txt", true)))) {
 			out.print(this.domain);
 			out.print(";");
 			out.print(this.urlString);
 			out.print(";");
-			if (title.trim().isEmpty()) title = "null";
-			out.print(title + ";");
-			if (bodyAbstract.trim().isEmpty()) bodyAbstract = "null";
-			out.print(bodyAbstract + ";");
 			for (int i = 0; i < this.KeywordNodes.size(); i++)
 				out.print("/ " + this.KeywordNodes.get(i).keyword + ":" + this.KeywordNodes.get(i).counter);
 			out.println();
@@ -223,6 +200,7 @@ public class WebSpider {
 								}
 							}
 						}
+
 					}
 
 					if (i > 0) {
@@ -242,7 +220,9 @@ public class WebSpider {
 							}
 							// System.out.println("catch phrase : " + phrase);
 						}
+
 					}
+
 				}
 			} catch (ArrayIndexOutOfBoundsException e) {
 			}
@@ -267,11 +247,10 @@ public class WebSpider {
 				if (!candidateString[i].contains("http"))
 					candidateString[i] = prefix + domain + candidateString[i];
 
-				while (spiderEggs.size() < x
+				while (spiderEggs.size() < x 
 						&& ProceeedURLPool.size() <= y && !URLPool.contains(candidateString[i])
 						&& !ProceeedURLPool.contains(candidateString[i])
-						&& !DeadLinkPool.contains(candidateString[i])
-						&& !hasSame(ProceeedURLPool, formatURL(candidateString[i]))) {
+						&& !DeadLinkPool.contains(candidateString[i])) {
 					URLPool.add(candidateString[i]);
 					if (URLPool.size() > 0 && spiderEggs.size() < x) {
 						// System.out.println(candidateString[i]);
@@ -282,25 +261,6 @@ public class WebSpider {
 				}
 			}
 		}
-	}
-
-	private String formatURL(String url) {
-		url = url.replaceFirst("http(s{0,1})://", "");
-		if (url.charAt(url.length() - 1) == '/')
-			url = url.substring(0, url.length() - 1);
-		return url;
-	}
-
-	private boolean hasSame(LinkedList<String> pool, String url) {
-		for (String poolUrl : pool) {
-			//System.out.println("hasSame |" + poolUrl + "| vs. |" + url + "|");
-			if (poolUrl.toLowerCase().equals(url.toLowerCase())) {
-				System.out.println("hasSame: " + url);
-				return true;
-			}
-		}
-		System.out.println("noSame: " + url);
-		return false;
 	}
 
 	private String[] getCandidateURLString(String currentLine) {
@@ -329,8 +289,8 @@ public class WebSpider {
 			}
 		}
 		return isIn;
-	}
 
+	}
 
 	public static void main(String[] args) {
 		scanner = new Scanner(System.in);
@@ -370,7 +330,6 @@ public class WebSpider {
 		System.out.println("===========================================");
 
 	}
-
 }
 
 class KeywordNode {
