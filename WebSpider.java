@@ -180,8 +180,8 @@ public class WebSpider {
 
 	private void extractKeywords(String currentLine) {
 		String currLine = currentLine.toLowerCase();
-		String[] candidateKeywords = currLine.split(" ");
 		if (isInStringArray(currLine, KeywordTag)) {
+			String[] candidateKeywords = currLine.split(" ");
 			if (currentLine.contains("<") && currentLine.contains(">")
 					&& currentLine.toLowerCase().split(">").length > 1)
 				currLine = currLine.split(">")[1].split("<")[0];
