@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 // Path = "/search"
 public class RequestHandler extends HttpServlet {
 
-    private String pat = "[(](.+) (AND|OR) (.+)[)]"; // search for ((?) (AND or OR ?) (?)), ? = capture
+    private String pat = "\((\(.+\)|[^()]) (AND|OR) (\(.+\)|[^()])\)"; // search for ((?) (AND or OR ?) (?)), ? = capture
     private Pattern pattern;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -31,9 +31,8 @@ public class RequestHandler extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String query = request.getQueryString();
-        /* Each slot in the ArrayList keywordGroup represent an AND group,
-         * each AND group will have OR group. group will be indicated by ' AND|OR ',
-         * while OR group will be indicated by space (%20 in url path).
+        /* Each node represent an AND/OR group, with left and right child. 
+         * Parsing and processing will be done recursively. 
          * E.g.
          * (A OR B), ((A OR B) AND C) ...etc.
          */
