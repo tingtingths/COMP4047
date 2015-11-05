@@ -28,11 +28,7 @@ public class SpiderServletContextListener implements ServletContextListener {
             Loghelper.log(this.getClass().getSimpleName(), "running spider");
             System.setProperty("wordnet.database.dir", Settings.dictDir);
             WebSpider spider = new WebSpider(); // demo constructor
-            spider.startSpider();
-            spider.start();
-            try {
-                spider.join();
-            } catch (InterruptedException e) { e.printStackTrace(); }
+            spider.spiderRun();
         }
         long endTime = new Date().getTime();
         Loghelper.log(this.getClass().getSimpleName(), "spider finish, time taken : " + (endTime - startTime) + " ms");

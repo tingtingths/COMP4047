@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
 // Path = "/search"
 public class RequestHandler extends HttpServlet {
 
-    private String pat = "\((\(.+\)|[^()]) (AND|OR) (\(.+\)|[^()])\)"; // search for ((?) (AND or OR ?) (?)), ? = capture
-    private Pattern pattern;
+    private String pat = "\\(([^()]+|\\(.+\\)) (AND|OR) ([^()]+|\\(.+\\))\\)"; // search for ((?) (AND or OR ?) (?)), ? = capture
+    private Pattern nodePattern = Pattern.compile(pat, Pattern.CASE_INSENSITIVE);
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // do nothing... we don't handle POST request
@@ -31,68 +31,44 @@ public class RequestHandler extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String query = request.getQueryString();
-        /* Each node represent an AND/OR group, with left and right child. 
-         * Parsing and processing will be done recursively. 
+        /* Each node represent an AND/OR group, with left and right child.
+         * Parsing and processing will be done recursively.
          * E.g.
          * (A OR B), ((A OR B) AND C) ...etc.
          */
-        pattern = Pattern.compile(pat, Pattern.CASE_INSENSITIVE);
         String qString = query.split("&")[0].split("=")[1].replace("%20", " ");
-        Loghelper.log(this.getClass().getSimpleName(), "qString: " + qString);
         Node initNode = parseNodes(qString);
         // debug building, the correct result should be same as the user input
-        Loghelper.log(this.getClass().getSimpleName(), "Building string...");
-        String s = buildNodeStr(initNode);
-        Loghelper.log(this.getClass().getSimpleName(), s.equals(qString) + ", type: " + initNode.getNodeType() + ", pat: " + pat + ", " + s);
-        Loghelper.log(this.getClass().getSimpleName(), "Building done...");
+        Loghelper.log(this.getClass().getSimpleName(), "Build string from nodes...");
+        Loghelper.log(this.getClass().getSimpleName(), "Root type: " + initNode.getNodeType() + ", " + buildNodeStr(initNode));
 
-        /*
-        ArrayList<String> keywordGroup = parseQuery(query);
-        String keyword = "";
-
-        Loghelper.log(this.getClass().getSimpleName(), keyword);
-        */
         // get json
         String json = processJson(initNode);
 
         // return json to client
         PrintWriter out = response.getWriter();
         out.write(json);
-
-    }
-
-    private String parseQuery(String qString) {
-        String[] queries = qString.split("&");
-
-        for (String q : queries) {
-            String[] query = q.split("=");
-            if (query[0].equalsIgnoreCase("q"))
-                return query[1];
-        }
-
-        return "";
     }
 
     // Tokenize the user query and build nodes
     private Node parseNodes(String q) {
         //Loghelper.log(this.getClass().getSimpleName(), q);
-        Matcher m = pattern.matcher(q);
+        Matcher m = nodePattern.matcher(q);
         Node n = null;
 
         if (m.matches()) {
             String type = m.group(2); // AND? OR?
             String left = m.group(1);
             String right = m.group(3);
-            Loghelper.log(this.getClass().getSimpleName(), "Matches, " + left + " " + type + " " + right);
+            //Loghelper.log(this.getClass().getSimpleName(), "Matches, " + left + " " + type + " " + right);
             if (type.equalsIgnoreCase("AND"))
                 n = new Node(Node.AND_NODE, parseNodes(left), parseNodes(right));
             if (type.equalsIgnoreCase("OR"))
                 n = new Node(Node.OR_NODE, parseNodes(left), parseNodes(right));
         } else {
-            Loghelper.log(this.getClass().getSimpleName(), "No Matches, " + q);
+            //Loghelper.log(this.getClass().getSimpleName(), "No Matches, " + q);
             n = new Node(Node.STR_NODE, q);
         }
-
         return n;
     }
 
@@ -100,11 +76,10 @@ public class RequestHandler extends HttpServlet {
         if (n.getNodeType() == Node.STR_NODE)
             return n.getKeyword();
         if (n.getNodeType() == Node.AND_NODE)
-            return "(" + buildNodeStr(n.getLeft()) + " AND " + buildNodeStr(n.getRight()) + ")";
+            return "[" + buildNodeStr(n.getLeft()) + " AND " + buildNodeStr(n.getRight()) + "]";
         if (n.getNodeType() == Node.OR_NODE)
-            return "(" + buildNodeStr(n.getLeft()) + " OR " + buildNodeStr(n.getRight()) + ")";
+            return "[" + buildNodeStr(n.getLeft()) + " OR " + buildNodeStr(n.getRight()) + "]";
         return "null";
-
     }
 
     private String processJson(Node n) {
@@ -118,40 +93,23 @@ public class RequestHandler extends HttpServlet {
         //Loghelper.getInstance().log(this.getClass().getSimpleName(), System.getProperty("user.dir"));
         File f = new File(Settings.workingDir + "spiderResult.txt");
         String line = "";
-        //Pattern pattern = Pattern.compile(".*" + key + ".*", Pattern.CASE_INSENSITIVE);
         try {
             BufferedReader r = new BufferedReader(new FileReader(f));
             while ((line = r.readLine()) != null) { // for every url
-                int weight = 1;
                 boolean match = false;
-                String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - title, s[3] - keywords
-                List<String> keywords = Arrays.asList(s[3].split("/ "));
-                if (pattern.matcher(s[2]).matches()) { // match with page title
-                    weight += 10;
-                    //match = true;
-                }
-                /*
-                // check every keyword and match with user keyword - original algorithm
-                for (String keyword : keywords) {
-                    String[] keyWeight = keyword.split(":");
-                    if (pattern.matcher(keyword).matches()) { // match with keywords
-                        if (keyWeight.length > 1)
-                            weight += Integer.valueOf(keyWeight[1]);
-                        match = true;
-                    }
-                }
-                */
-                // new algorithm - boolean node checking
-                boolean mat = nodeIsTrue(n, keywords);
-                Loghelper.log(this.getClass().getSimpleName(), "mat: " + mat);
-                if (mat) {
+                String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - title, s[3] - abstract, s[4] - keywords
+
+                // construct keyword list
+                List<String> keywords = Arrays.asList(s[4].split("/ "));
+
+                // boolean node checking keywords and title
+                int weight = nodeIsTrue(n, keywords, s[2], 0);
+                if (weight > 0) {
                     match = true;
                 }
 
-                pattern = Pattern.compile("", Pattern.CASE_INSENSITIVE);
-
                 if (match) {
-                    json += "{\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"weight\":\"" + weight + "\"},";
+                    json += "{\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"abstract\": \"" + s[3] + "\", \"weight\":\"" + weight + "\"},";
                 }
             }
             r.close();
@@ -163,33 +121,48 @@ public class RequestHandler extends HttpServlet {
         return json + "]";
     }
 
-    private boolean nodeIsTrue(Node n, List<String> keywords) {
+    private int nodeIsTrue(Node n, List<String> keywords, String title, int weight) {
         if (n.getNodeType() == Node.STR_NODE) {
-            boolean result = containsIgnorecase(n.getKeyword(), keywords);
-            Loghelper.log(this.getClass().getSimpleName(), "STR " + n.getKeyword() + ": " + result);
-            return result;
+            weight += containsIgnorecase(n.getKeyword(), keywords, title);
+            //Loghelper.log(this.getClass().getSimpleName(), "STR " + n.getKeyword() + ": " + result);
+            return weight;
         }
         if (n.getNodeType() == Node.AND_NODE) {
-            boolean result = (nodeIsTrue(n.getLeft(), keywords) && nodeIsTrue(n.getRight(), keywords));
-            Loghelper.log(this.getClass().getSimpleName(), "AND: " + result);
-            return result;
+            int wLeft = nodeIsTrue(n.getLeft(), keywords, title, weight);
+            int wRight = nodeIsTrue(n.getRight(), keywords, title, weight);
+
+            if (wLeft > 0 && wRight > 0) {
+                weight += wLeft + wRight;
+            }
+            //Loghelper.log(this.getClass().getSimpleName(), "AND: " + result);
+            return weight;
         }
         if (n.getNodeType() == Node.OR_NODE) {
-            boolean result = (nodeIsTrue(n.getLeft(), keywords) || nodeIsTrue(n.getRight(), keywords));
-            Loghelper.log(this.getClass().getSimpleName(), "OR: " + result);
-            return result;
+            weight += nodeIsTrue(n.getLeft(), keywords, title, weight) + nodeIsTrue(n.getRight(), keywords, title, weight);
+            //Loghelper.log(this.getClass().getSimpleName(), "OR: " + result);
+            return weight;
         }
-        return false;
+        return weight;
     }
 
-    private boolean containsIgnorecase(String needle, List<String> haystack) {
+
+    private int containsIgnorecase(String needle, List<String> haystack, String title) {
+        Pattern needlePat = Pattern.compile(needle, Pattern.CASE_INSENSITIVE);
+        int titleWeight = 0;
+
+        if (needlePat.matcher(title).find()) titleWeight += 10;
+
         for (String keyword : haystack) {
-            String[] keyWeight = keyword.split(":");
-            //Loghelper.log(this.getClass().getSimpleName(), needle + " vs " + keyWeight[0]);
-            if (keyWeight[0].equalsIgnoreCase(needle)) {
-                return true;
+            if (!keyword.trim().isEmpty()) {
+                String[] keyWeight = keyword.split(":");
+
+                if (needlePat.matcher(keyWeight[0]).find()) {
+                    //Loghelper.log(this.getClass().getSimpleName(), "Match: " + keyWeight[0]);
+                    if (keyWeight.length > 1) return Integer.valueOf(keyWeight[1]) + titleWeight;
+                    return 1 + titleWeight;
+                }
             }
         }
-        return false;
+        return titleWeight;
     }
 }

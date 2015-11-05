@@ -97,9 +97,6 @@ function startUiProcess(json) {
 }
 
 function appendResult() {
-	var dummyText = "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. "
-					+ "Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, "
-					+ "pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate";
 	var count = 0;
 	var container = document.getElementById("results");
 
@@ -120,6 +117,7 @@ function appendResult() {
 			var domain = result["domain"];
 			var url = result["url"];
 			var title = result["title"];
+			var abstract = result["abstract"];
 			var weight = result["weight"];
 
 			// set result element
@@ -132,11 +130,9 @@ function appendResult() {
 			eleTitle.href = url;
 			eleTitle.target = "_blank";
 			eleTitle.className = "resultTitle";
-			if (title == "null") {
-				eleTitle.innerHTML = domain;
-			} else {
-				eleTitle.innerHTML = title;
-			}
+			if (title == "null")
+				title = domain;
+			eleTitle.innerHTML = title;
 
 			// set weight
 			var eleWeight = document.createElement("span");
@@ -151,11 +147,13 @@ function appendResult() {
 			// set abstract
 			var eleAbs = document.createElement("p");
 			eleAbs.className = "resultAbstract";
-			eleAbs.innerHTML = dummyText;
+			if (abstract == "null")
+				abstract = "...";
+			eleAbs.innerHTML = abstract;
 
 			// append elements
 			eleResult.appendChild(eleTitle);
-			eleResult.appendChild(eleWeight);
+			//eleResult.appendChild(eleWeight);
 			eleResult.appendChild(document.createElement("br")); // new line
 			eleResult.appendChild(eleUrl);
 			eleResult.appendChild(eleAbs);
