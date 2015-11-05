@@ -32,11 +32,11 @@ public class WebSpider {
 																		// the
 																		// Dead
 																		// links
-	private String title = "";
-	private String bodyAbstract = "";
 	private String urlString; // URL string of current page
 	private URL url; // URL object of current page
 	private String domain; // domain of current page
+	private String title = "";
+	private String bodyAbstract = "";
 	private int x;
 	private int y;
 	private boolean inputOk = false;
