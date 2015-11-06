@@ -117,7 +117,6 @@ function appendResult() {
 			var domain = result["domain"];
 			var url = result["url"];
 			var title = result["title"];
-			var abstract = result["abstract"];
 			var weight = result["weight"];
 
 			// set result element
@@ -145,18 +144,20 @@ function appendResult() {
 			eleUrl.innerHTML = url;
 
 			// set abstract
+			/*
 			var eleAbs = document.createElement("p");
 			eleAbs.className = "resultAbstract";
 			if (abstract == "null")
 				abstract = "...";
 			eleAbs.innerHTML = abstract;
+			*/
 
 			// append elements
 			eleResult.appendChild(eleTitle);
 			//eleResult.appendChild(eleWeight);
 			eleResult.appendChild(document.createElement("br")); // new line
 			eleResult.appendChild(eleUrl);
-			eleResult.appendChild(eleAbs);
+			//eleResult.appendChild(eleAbs);
 			container.appendChild(eleResult);
 
 			count += 1;

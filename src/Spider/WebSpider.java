@@ -16,7 +16,7 @@ public class WebSpider {
 	public static final int DemoY = 100; // Processed URL pool size
 	public static final int DomainKeywordRanking = 40;
 	public static final String prefix = "http://";
-	public static final String DemoURLString = "http://buwww.hkbu.edu.hk/eng/main/index.jsp";
+	public static final String DemoURLString = "http://www.hku.hk/";
 	public static final Pattern hrefPattern = Pattern.compile("href=\"(.*?)\"");
 	public static final String[] URLException = { ".pdf", "..", ".gif", ".png", ".jpg", ".ico", "javascript", "mailto",
 			".css", "adobe","turnitin" };
@@ -36,7 +36,6 @@ public class WebSpider {
 	private URL url; // URL object of current page
 	private String domain; // domain of current page
 	private String title = "";
-	private String bodyAbstract = "";
 	private int x;
 	private int y;
 	private boolean inputOk = false;
@@ -116,6 +115,8 @@ public class WebSpider {
 	}
 
 	public boolean spiderRun() {
+		int abstractLength = 150;
+		boolean inBody = false;
 		String[] strs = domain.split("\\.");
 
 		if (strs.length > 1) {
@@ -148,10 +149,6 @@ public class WebSpider {
 					Loghelper.log("grab title", urlString + " -> " + currentLine);
 					title = titleMatcher.group(1);
 				}
-				Matcher bodyMatcher = Pattern.compile(".*<body>(.{0,150}).*").matcher(currentLine);
-				if (bodyMatcher.matches()) {
-					bodyAbstract = bodyMatcher.group(1);
-				}
 				// Extract keywords
 				extractKeywords(currentLine);
 				// Extract hyperlinks
@@ -180,8 +177,6 @@ public class WebSpider {
 			out.print(";");
 			if (title.trim().isEmpty()) title = "null";
 			out.print(title + ";");
-			if (bodyAbstract.trim().isEmpty()) bodyAbstract = "null";
-			out.print(bodyAbstract + ";");
 			for (int i = 0; i < this.KeywordNodes.size(); i++)
 				out.print("/ " + this.KeywordNodes.get(i).keyword + ":" + this.KeywordNodes.get(i).counter);
 			out.println();

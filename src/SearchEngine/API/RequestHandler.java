@@ -24,6 +24,7 @@ public class RequestHandler extends HttpServlet {
 
     private String pat = "\\(([^()]+|\\(.+\\)) (AND|OR) ([^()]+|\\(.+\\))\\)"; // search for ((?) (AND or OR ?) (?)), ? = capture
     private Pattern nodePattern = Pattern.compile(pat, Pattern.CASE_INSENSITIVE);
+    long startTime = 0;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // do nothing... we don't handle POST request
@@ -31,6 +32,7 @@ public class RequestHandler extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String query = request.getQueryString();
+        startTime = new Date().getTime();
         /* Each node represent an AND/OR group, with left and right child.
          * Parsing and processing will be done recursively.
          * E.g.
@@ -83,7 +85,6 @@ public class RequestHandler extends HttpServlet {
     }
 
     private String processJson(Node n) {
-        long startTime = new Date().getTime();
         String filePath = "";
         // local data format -> domain;url;title;/ k1:n/ k2:k ...
         String json = "[";
@@ -97,7 +98,7 @@ public class RequestHandler extends HttpServlet {
             BufferedReader r = new BufferedReader(new FileReader(f));
             while ((line = r.readLine()) != null) { // for every url
                 boolean match = false;
-                String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - title, s[3] - abstract, s[4] - keywords
+                String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - title, s[3] - keywords
 
                 // construct keyword list
                 List<String> keywords = Arrays.asList(s[4].split("/ "));
@@ -109,7 +110,7 @@ public class RequestHandler extends HttpServlet {
                 }
 
                 if (match) {
-                    json += "{\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"abstract\": \"" + s[3] + "\", \"weight\":\"" + weight + "\"},";
+                    json += "{\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"weight\":\"" + weight + "\"},";
                 }
             }
             r.close();
