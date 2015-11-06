@@ -16,7 +16,7 @@ public class WebSpider {
 	public static final int DemoY = 100; // Processed URL pool size
 	public static final int DomainKeywordRanking = 40;
 	public static final String prefix = "http://";
-	public static final String DemoURLString = "http://www.hku.hk/";
+	public static final String DemoURLString = "http://buwww.hkbu.edu.hk/eng/main/index.jsp";
 	public static final Pattern hrefPattern = Pattern.compile("href=\"(.*?)\"");
 	public static final String[] URLException = { ".pdf", "..", ".gif", ".png", ".jpg", ".ico", "javascript", "mailto",
 			".css", "adobe","turnitin" };
@@ -163,6 +163,8 @@ public class WebSpider {
 
 			spiderReport();
 		} catch (IOException e) {
+			ProceeedURLPool.remove(this.urlString);
+			DeadLinkPool.add(this.urlString);
 			System.err.println("\nA spider died accidentally due to IOException... RIP");
 			return isSuccessful;
 		}
@@ -326,8 +328,8 @@ public class WebSpider {
 		return isIn;
 	}
 
-
 	public static void main(String[] args) {
+		System.setProperty("wordnet.database.dir", Settings.dictDir);
 		scanner = new Scanner(System.in);
 		System.out.println("Welcome to WebSpider!\n\n");
 		System.out.println("Do you want to run demo? It will start at HKBU main page with X = 10, Y = 100.(yes/no)");

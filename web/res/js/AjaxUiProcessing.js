@@ -126,8 +126,8 @@ function appendResult() {
 
 			// set title
 			var eleTitle = document.createElement("a");
-			eleTitle.href = url;
-			eleTitle.target = "_blank";
+			//eleTitle.href = url;
+			//eleTitle.target = "_blank";
 			eleTitle.className = "resultTitle";
 			if (title == "null")
 				title = domain;
