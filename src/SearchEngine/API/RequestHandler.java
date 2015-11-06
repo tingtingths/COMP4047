@@ -101,7 +101,7 @@ public class RequestHandler extends HttpServlet {
                 String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - title, s[3] - keywords
 
                 // construct keyword list
-                List<String> keywords = Arrays.asList(s[4].split("/ "));
+                List<String> keywords = Arrays.asList(s[3].split("/ "));
 
                 // boolean node checking keywords and title
                 int weight = nodeIsTrue(n, keywords, s[2], 0);
