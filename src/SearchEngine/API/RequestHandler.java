@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -17,11 +16,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by Ting on 12/10/2015.
+ * The class listen on PATH "/search", and is responsible for handling user search request.
  */
-// Path = "/search"
 public class RequestHandler extends HttpServlet {
 
+    // Pattern for parsing use input
     private String pat = "\\(([^()]+|\\(.+\\)) (AND|OR) ([^()]+|\\(.+\\))\\)"; // search for ((?) (AND or OR ?) (?)), ? = capture
     private Pattern nodePattern = Pattern.compile(pat, Pattern.CASE_INSENSITIVE);
     long startTime = 0;
@@ -35,7 +34,9 @@ public class RequestHandler extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         String query = request.getQueryString();
+        // start measuring time
         startTime = new Date().getTime();
+        // parse input
         String qString = query.split("&")[0].split("=")[1].replace("%20", " ");
         Node initNode = parseNodes(qString);
         // debug building, the correct result should be same as the user input
@@ -50,17 +51,20 @@ public class RequestHandler extends HttpServlet {
         out.write(json);
     }
 
-    /* Each node represent an AND/OR group, with left and right child.
- * Parsing and processing will be done recursively.
- * E.g.
- * (A OR B), ((A OR B) AND C) ...etc.
- */
+    /**
+     * Each node represent an AND/OR group, with left and right child.
+     * Parsing and processing will be done recursively.
+     * E.g.
+     * (A OR B), ((A OR B) AND C) ...etc.
+     * @param q - String representing the tree
+     * @return Root node of the tree
+     */
     // Tokenize the user query and build nodes
     private Node parseNodes(String q) {
         Matcher m = nodePattern.matcher(q);
         Node n = null;
 
-        if (m.matches()) {
+        if (m.matches()) { // if the string is a node pattern
             String type = m.group(2); // AND? OR?
             String left = m.group(1);
             String right = m.group(3);
@@ -69,12 +73,17 @@ public class RequestHandler extends HttpServlet {
                 n = new Node(Node.AND_NODE, parseNodes(left), parseNodes(right));
             if (type.equalsIgnoreCase("OR"))
                 n = new Node(Node.OR_NODE, parseNodes(left), parseNodes(right));
-        } else {
+        } else { // it is a simple keyword
             n = new Node(Node.STR_NODE, q);
         }
         return n;
     }
 
+    /**
+     * Construct a string from tree, use for debug.
+     * @param n - a tree node
+     * @return String representing the tree
+     */
     private String buildNodeStr(Node n) {
         if (n.getNodeType() == Node.STR_NODE)
             return n.getKeyword();
@@ -85,14 +94,18 @@ public class RequestHandler extends HttpServlet {
         return "null";
     }
 
+    /**
+     * Search for url that match with the tree.
+     * @param n - Root node of the tree
+     * @return String of results in JSON format
+     */
     private String processJson(Node n) {
         String filePath = "";
         // local data format -> domain;url;title;/ k1:n/ k2:k ...
         String json = "[";
         boolean firstMatch = true;
 
-        // read WebSpider result file...
-        //Loghelper.getInstance().log(this.getClass().getSimpleName(), System.getProperty("user.dir"));
+        // read WebSpider result file
         File f = new File(Settings.workingDir + "spiderResult.txt");
         String line = "";
         try {
@@ -109,7 +122,7 @@ public class RequestHandler extends HttpServlet {
                 if (weight > 0) {
                     match = true;
                 }
-
+                // if the url match, add it into the json
                 if (match) {
                     Loghelper.log(this.getClass().getSimpleName(), s[2]);
                     json += "{\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"weight\":\"" + weight + "\"},";
@@ -120,15 +133,25 @@ public class RequestHandler extends HttpServlet {
         }
         long endTime = new Date().getTime();
 
+        // include the processing time into the json
         json += "{\"ms\" : \"" + (endTime - startTime) + "\"}";
 
         return json + "]";
     }
 
+    /**
+     * Check if the page match with the tree
+     * @param n - Root node of the tree
+     * @param keywords - keywords of the page
+     * @param title - title of the page
+     * @param weight - the current weight of the page
+     * @return weight, 0 - no match, &gt;0 - match
+     */
     private int nodeIsTrue(Node n, List<String> keywords, String title, int weight) {
         if (n.getNodeType() == Node.STR_NODE) {
+            // search for match, ignore case
             weight += containsIgnorecase(n.getKeyword(), keywords, title);
-            //Loghelper.log(this.getClass().getSimpleName(), "STR " + n.getKeyword() + ": " + result);
+
             return weight;
         }
         if (n.getNodeType() == Node.AND_NODE) {
@@ -138,18 +161,25 @@ public class RequestHandler extends HttpServlet {
             if (wLeft > 0 && wRight > 0) {
                 weight += wLeft + wRight;
             }
-            //Loghelper.log(this.getClass().getSimpleName(), "AND: " + result);
+
             return weight;
         }
         if (n.getNodeType() == Node.OR_NODE) {
             weight += nodeIsTrue(n.getLeft(), keywords, title, weight) + nodeIsTrue(n.getRight(), keywords, title, weight);
-            //Loghelper.log(this.getClass().getSimpleName(), "OR: " + result);
+
             return weight;
         }
+
         return weight;
     }
 
-
+    /**
+     * Search for match using a keyword in a node.
+     * @param needle - the keyword
+     * @param haystack - the keywords of the page to perform searching
+     * @param title - title of the page
+     * @return weight, 0 - no match, &gt;0 - match
+     */
     private int containsIgnorecase(String needle, List<String> haystack, String title) {
         Pattern needlePat = Pattern.compile(needle, Pattern.CASE_INSENSITIVE);
         int titleWeight = 0;

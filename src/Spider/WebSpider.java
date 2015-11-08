@@ -3,383 +3,430 @@ package Spider;
 import SearchEngine.Loghelper;
 import SearchEngine.Settings;
 
-import java.net.*;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.LinkedList;
 import java.util.Scanner;
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import java.io.*;
-
+/**
+ * This class is responsible for collecting information from pages linked in the initial URL.
+ */
 public class WebSpider {
-	private static Scanner scanner;
-	public static final int DemoX = 10; // URL pool size
-	public static final int DemoY = 100; // Processed URL pool size
-	public static final int DomainKeywordRanking = 40;
-	public static final String prefix = "http://";
-	public static final String DemoURLString = "http://buwww.hkbu.edu.hk/eng/main/index.jsp";
-	public static final Pattern hrefPattern = Pattern.compile("href=\"(.*?)\"");
-	public static final String[] URLException = { ".pdf", "..", ".gif", ".png", ".jpg", ".ico", "javascript", "mailto",
-			".css", "adobe","turnitin" };
-	public static final String[] StopList = { "and", "the", "for", "did", "does", "are", "was", "were", "has", "have",
-			"had", "that", "this", "these", "which", "whose", "who", "whom", "what", "why", "she", "they", "them", "to",
-			"doing", "be", "return", "var", "please", "will", "well", "over", "size", "its", "need", "sin", "known",
-			"means", "true", "false", "tai", "nothing", "can" };
-	public static final String[] KeywordTag = { "<title", "<p", "<li", "<div", "<a", "<h", "<meta name=", "<menu",
-			"<td", "<u" };
-	public static LinkedList<String> ProceeedURLPool = new LinkedList<>();
-	public static LinkedList<String> DomainPool = new LinkedList<>();
-	public static LinkedList<String> DeadLinkPool = new LinkedList<>(); // Stores
-																		// the
-																		// Dead
-																		// links
-	private String urlString; // URL string of current page
-	private URL url; // URL object of current page
-	private String domain; // domain of current page
-	private String title = "";
-	private int x;
-	private int y;
-	private boolean inputOk = false;
-	private LinkedList<String> URLPool; // Stores the links find in current page
-	private LinkedList<String> Keywords;
-	private LinkedList<KeywordNode> KeywordNodes; // Stores the keywords of current page
-	private LinkedList<WebSpider> spiderEggs;
+    private static Scanner scanner;
+    public static final int DemoX = 10; // URL pool size
+    public static final int DemoY = 100; // Processed URL pool size
+    public static final int DomainKeywordRanking = 40;
+    public static final String prefix = "http://";
+    public static final String DemoURLString = "http://buwww.hkbu.edu.hk/eng/main/index.jsp";
+    public static final Pattern hrefPattern = Pattern.compile("href=\"(.*?)\"");
+    public static final String[] URLException = {".pdf", "..", ".gif", ".png", ".jpg", ".ico", "javascript", "mailto",
+            ".css", "adobe", "turnitin"};
+    public static final String[] StopList = {"and", "the", "for", "did", "does", "are", "was", "were", "has", "have",
+            "had", "that", "this", "these", "which", "whose", "who", "whom", "what", "why", "she", "they", "them", "to",
+            "doing", "be", "return", "var", "please", "will", "well", "over", "size", "its", "need", "sin", "known",
+            "means", "true", "false", "tai", "nothing", "can"};
+    public static final String[] KeywordTag = {"<title", "<p", "<li", "<div", "<a", "<h", "<meta name=", "<menu",
+            "<td", "<u"};
+    public static LinkedList<String> ProceeedURLPool = new LinkedList<>();
+    public static LinkedList<String> DomainPool = new LinkedList<>();
+    public static LinkedList<String> DeadLinkPool = new LinkedList<>(); // Stores dead links
+
+    private String urlString; // URL string of current page
+    private URL url; // URL object of current page
+    private String domain; // domain of current page
+    private String title = "";
+    private int x;
+    private int y;
+    private boolean inputOk = false;
+    private LinkedList<String> URLPool; // Stores the links find in current page
+    private LinkedList<String> Keywords;
+    private LinkedList<KeywordNode> KeywordNodes; // Stores the keywords of current page
+    private LinkedList<WebSpider> spiderEggs;
 
 
-	public WebSpider() { // Demo constructor
-		urlString = DemoURLString;
-		try {
-			url = new URL(urlString);
-			domain = getDomain(DemoURLString);
-			System.out.println("Domain: " + domain);
-			x = DemoX;
-			y = DemoY;
-			URLPool = new LinkedList<>();
-			Keywords = new LinkedList<>();
-			spiderEggs = new LinkedList<>();
-			KeywordNodes = new LinkedList<>();
-			inputOk = true;
-		} catch (MalformedURLException e) {
-			System.out.println("Invalid URL!");
-		}
-	}
+    /**
+     * Demo constructor
+     */
+    public WebSpider() {
+        urlString = DemoURLString;
+        try {
+            url = new URL(urlString);
+            domain = getDomain(DemoURLString);
+            System.out.println("Domain: " + domain);
+            x = DemoX;
+            y = DemoY;
+            URLPool = new LinkedList<>();
+            Keywords = new LinkedList<>();
+            spiderEggs = new LinkedList<>();
+            KeywordNodes = new LinkedList<>();
+            inputOk = true;
+        } catch (MalformedURLException e) {
+            System.out.println("Invalid URL!");
+        }
+    }
 
-	public WebSpider(String inputURL, int X, int Y) {
-		urlString = inputURL;
-		try {
-			url = new URL(urlString);
-			domain = getDomain(inputURL);
-			x = X;
-			y = Y;
-			URLPool = new LinkedList<>();
-			Keywords = new LinkedList<>();
-			spiderEggs = new LinkedList<>();
-			KeywordNodes = new LinkedList<>();
-			inputOk = true;
-		} catch (MalformedURLException e) {
-			System.out.println("Invalid Input infomation!");
-		}
-	}
+    public WebSpider(String inputURL, int X, int Y) {
+        urlString = inputURL;
+        try {
+            url = new URL(urlString);
+            domain = getDomain(inputURL);
+            x = X;
+            y = Y;
+            URLPool = new LinkedList<>();
+            Keywords = new LinkedList<>();
+            spiderEggs = new LinkedList<>();
+            KeywordNodes = new LinkedList<>();
+            inputOk = true;
+        } catch (MalformedURLException e) {
+            System.out.println("Invalid Input infomation!");
+        }
+    }
 
-	public boolean getInputOk() {
-		return inputOk;
-	}
+    public boolean getInputOk() {
+        return inputOk;
+    }
 
-	private String getDomain(String urlString) {
-		if (url == null)
-			return null;
-		else {
-			String domain = urlString.split("/")[2];
-			if (domain.contains("?"))
-				domain = domain.split("\\?")[0];
-			if (!DomainPool.contains(domain))
-				DomainPool.add(domain);
-			return domain;
-		}
-	}
+    /**
+     * Get the domain from url.
+     * @param urlString - the url to get domain from
+     * @return the domain of the url
+     */
+    private String getDomain(String urlString) {
+        if (url == null)
+            return null;
+        else {
+            String domain = urlString.split("/")[2];
+            if (domain.contains("?"))
+                domain = domain.split("\\?")[0];
+            if (!DomainPool.contains(domain))
+                DomainPool.add(domain);
+            return domain;
+        }
+    }
 
-	public void printHTML() throws IOException {
-		if (url == null)
-			return;
+    public void printHTML() throws IOException {
+        if (url == null)
+            return;
 
-		BufferedReader in = null;
-		try {
-			in = new BufferedReader(new InputStreamReader(url.openStream()));
-			String str;
-			while ((str = in.readLine()) != null)
-				System.out.println(str);
-			in.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+        BufferedReader in = null;
+        try {
+            in = new BufferedReader(new InputStreamReader(url.openStream()));
+            String str;
+            while ((str = in.readLine()) != null)
+                System.out.println(str);
+            in.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 
-	public boolean spiderRun() {
-		int abstractLength = 150;
-		boolean inBody = false;
-		String[] strs = domain.split("\\.");
+    /**
+     * Get the html page line by line and get useful information, for instance keywords, or hyperlinks.
+     * @return true - if the process success, false - process failed
+     */
+    public boolean spiderRun() {
+        int abstractLength = 150;
+        boolean inBody = false;
+        String[] strs = domain.split("\\.");
 
-		if (strs.length > 1) {
-			if (strs[0].contains("www")) {
-				this.Keywords.add(strs[1]);
-				this.KeywordNodes.add(new KeywordNode(strs[1], DomainKeywordRanking));
-			} else {
-				this.Keywords.add(strs[0]);
-				this.KeywordNodes.add(new KeywordNode(strs[0], DomainKeywordRanking));
-			}
-		}
+        if (strs.length > 1) {
+            if (strs[0].contains("www")) {
+                this.Keywords.add(strs[1]);
+                this.KeywordNodes.add(new KeywordNode(strs[1], DomainKeywordRanking));
+            } else {
+                this.Keywords.add(strs[0]);
+                this.KeywordNodes.add(new KeywordNode(strs[0], DomainKeywordRanking));
+            }
+        }
 
-		boolean isSuccessful = false;
-		if (url == null) {
-			return isSuccessful;
-		}
-		BufferedReader in = null;
-		try {
-			in = new BufferedReader(new InputStreamReader(url.openStream()));
-			String currentLine;
-			boolean reachBody = false;
-			while ((currentLine = in.readLine()) != null) {
-				if (currentLine.contains("<title>ERROR: The requested URL could not be retrieved</title>")) {
-					System.err.println("A spider died accidentally due to error page... RIP");
-					return isSuccessful;
-				}
-				// Extract title
-				Matcher titleMatcher = Pattern.compile(".*<title>(.*)</title>.*").matcher(currentLine);
-				if (title.trim().isEmpty() && titleMatcher.matches()) {
-					Loghelper.log("grab title", urlString + " -> " + currentLine);
-					title = titleMatcher.group(1);
-				}
-				// Extract keywords
-				extractKeywords(currentLine);
-				// Extract hyperlinks
-				if (!reachBody && currentLine.contains("</head>"))
-					reachBody = true;
-				if (reachBody)
-					extractHyperlinks(currentLine);
-			}
-			in.close();
-			isSuccessful = true;
-			System.out.println("A spider died peacefully... RIP");
+        boolean isSuccessful = false;
+        if (url == null) {
+            return isSuccessful;
+        }
+        BufferedReader in = null;
+        try {
+            in = new BufferedReader(new InputStreamReader(url.openStream()));
+            String currentLine;
+            boolean reachBody = false;
 
-			spiderReport();
-		} catch (IOException e) {
-			ProceeedURLPool.remove(this.urlString);
-			DeadLinkPool.add(this.urlString);
-			System.err.println("\nA spider died accidentally due to IOException... RIP");
-			return isSuccessful;
-		}
-		return isSuccessful;
-	}
+            // process the html line by line
+            while ((currentLine = in.readLine()) != null) {
+                if (currentLine.contains("<title>ERROR: The requested URL could not be retrieved</title>")) {
+                    System.err.println("A spider died accidentally due to error page... RIP");
+                    return isSuccessful;
+                }
+                // Extract title
+                Matcher titleMatcher = Pattern.compile(".*<title>(.*)</title>.*").matcher(currentLine);
+                if (title.trim().isEmpty() && titleMatcher.matches()) {
+                    Loghelper.log("grab title", urlString + " -> " + currentLine);
+                    title = titleMatcher.group(1);
+                }
+                // Extract keywords
+                extractKeywords(currentLine);
+                // Extract hyperlinks
+                if (!reachBody && currentLine.contains("</head>"))
+                    reachBody = true;
+                if (reachBody)
+                    extractHyperlinks(currentLine);
+            }
+            in.close();
+            isSuccessful = true;
+            System.out.println("A spider died peacefully... RIP");
 
-	private void spiderReport() {
-		try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(Settings.workingDir + "spiderResult.txt", true)))) {
-			out.print(this.domain);
-			out.print(";");
-			out.print(this.urlString);
-			out.print(";");
-			if (title.trim().isEmpty()) title = "null";
-			out.print(title + ";");
-			for (int i = 0; i < this.KeywordNodes.size(); i++)
-				out.print("/ " + this.KeywordNodes.get(i).keyword + ":" + this.KeywordNodes.get(i).counter);
-			out.println();
-		} catch (IOException e) {
+            spiderReport();
+        } catch (IOException e) {
+            ProceeedURLPool.remove(this.urlString);
+            DeadLinkPool.add(this.urlString);
+            System.err.println("\nA spider died accidentally due to IOException... RIP");
+            return isSuccessful;
+        }
+        return isSuccessful;
+    }
 
-		}
+    /**
+     * Print the result of current spider into the result file, later use by the SearchEngine.
+     * And print the report on console window.
+     */
+    private void spiderReport() {
+        try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(Settings.workingDir + "spiderResult.txt", true)))) {
+            out.print(this.domain);
+            out.print(";");
+            out.print(this.urlString);
+            out.print(";");
+            if (title.trim().isEmpty()) title = "null";
+            out.print(title + ";");
+            for (int i = 0; i < this.KeywordNodes.size(); i++)
+                out.print("/ " + this.KeywordNodes.get(i).keyword + ":" + this.KeywordNodes.get(i).counter);
+            out.println();
+        } catch (IOException e) {
 
-		System.err.println(
-				"===========================================================Spider report============================================================");
-		System.out.println("==============URL======== \n" + this.urlString);
-		System.out.println("===========Keywords====== ");
-		for (int i = 0; i < this.KeywordNodes.size(); i++)
-			System.out.print("/ " + this.KeywordNodes.get(i).keyword + ":" + this.KeywordNodes.get(i).counter);
-		System.err.println(
-				"\n=====================================================================================================================================");
-	}
+        }
 
-	private void extractKeywords(String currentLine) {
-		String currLine = currentLine.toLowerCase();
-		if (isInStringArray(currLine, KeywordTag)) {
-			String[] candidateKeywords = currLine.split(" ");
-			if (currentLine.contains("<") && currentLine.contains(">")
-					&& currentLine.toLowerCase().split(">").length > 1)
-				currLine = currLine.split(">")[1].split("<")[0];
-			try {
-				for (int i = 0; i < candidateKeywords.length; i++) {
+        System.err.println(
+                "===========================================================Spider report============================================================");
+        System.out.println("==============URL======== \n" + this.urlString);
+        System.out.println("===========Keywords====== ");
+        for (int i = 0; i < this.KeywordNodes.size(); i++)
+            System.out.print("/ " + this.KeywordNodes.get(i).keyword + ":" + this.KeywordNodes.get(i).counter);
+        System.err.println(
+                "\n=====================================================================================================================================");
+    }
 
-					if (WordChecker.isAWord(candidateKeywords[i]) && !isInStringArray(candidateKeywords[i], StopList)
-							&& candidateKeywords[i].length() > 2) {
+    /**
+     * Extract the keywords found in current line using the WordNet dictionary, and store them into list of KeywordNode
+     * @param currentLine - current html page line
+     */
+    private void extractKeywords(String currentLine) {
+        String currLine = currentLine.toLowerCase();
+        if (isInStringArray(currLine, KeywordTag)) {
+            String[] candidateKeywords = currLine.split(" ");
 
-						if (!Keywords.contains(candidateKeywords[i])) {
-							Keywords.add(candidateKeywords[i]);
-							KeywordNodes.add(new KeywordNode(candidateKeywords[i], 1));
-						} else {
-							for (int m = 0; m < KeywordNodes.size(); m++) {
-								if (KeywordNodes.get(m).keyword.equals(candidateKeywords[i])) {
-									KeywordNodes.get(m).addCounter();
-									break;
-								}
-							}
-						}
-					}
+            if (currentLine.contains("<") && currentLine.contains(">")
+                    && currentLine.toLowerCase().split(">").length > 1)
+                currLine = currLine.split(">")[1].split("<")[0];
 
-					if (i > 0) {
-						String phrase = candidateKeywords[i - 1] + " " + candidateKeywords[i];
-						// System.out.println("phrase : " + phrase);
-						if (WordChecker.isAWord(phrase)) {
-							if (!Keywords.contains(candidateKeywords[i - 1])) {
-								Keywords.add(phrase);
-								KeywordNodes.add(new KeywordNode(phrase, 1));
-							} else {
-								for (int m = 0; m < KeywordNodes.size(); m++) {
-									if (KeywordNodes.get(m).keyword.equals(phrase)) {
-										KeywordNodes.get(m).addCounter();
-										break;
-									}
-								}
-							}
-							// System.out.println("catch phrase : " + phrase);
-						}
-					}
-				}
-			} catch (ArrayIndexOutOfBoundsException e) {
-			}
-		}
-	}
+            try {
+                for (int i = 0; i < candidateKeywords.length; i++) {
 
-	private void extractHyperlinks(String currentLine) {
-		String[] candidateString = getCandidateURLString(currentLine);
-		if (candidateString != null) // and the URL pool is not full
-		{
-			for (int i = 0; i < candidateString.length && candidateString[i] != null; i++) {
-				if (candidateString[i].contains("#")) {
-					if (candidateString[i].equals("#"))
-						break;
-					else
-						candidateString[i] = candidateString[i].split("#")[0];
-				}
+                    // if it is found in the dictionary
+                    if (WordChecker.isAWord(candidateKeywords[i]) && !isInStringArray(candidateKeywords[i], StopList)
+                            && candidateKeywords[i].length() > 2) {
 
-				if (candidateString[i].contains("<"))
-					candidateString[i] = candidateString[i].split("<")[0];
+                        if (!Keywords.contains(candidateKeywords[i])) {
+                            Keywords.add(candidateKeywords[i]);
+                            KeywordNodes.add(new KeywordNode(candidateKeywords[i], 1));
+                        } else {
+                            for (int m = 0; m < KeywordNodes.size(); m++) {
+                                if (KeywordNodes.get(m).keyword.equals(candidateKeywords[i])) {
+                                    KeywordNodes.get(m).addCounter();
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
-				if (!candidateString[i].contains("http"))
-					candidateString[i] = prefix + domain + candidateString[i];
+                    if (i > 0) {
+                        String phrase = candidateKeywords[i - 1] + " " + candidateKeywords[i];
+                        // System.out.println("phrase : " + phrase);
+                        if (WordChecker.isAWord(phrase)) {
+                            if (!Keywords.contains(candidateKeywords[i - 1])) {
+                                Keywords.add(phrase);
+                                KeywordNodes.add(new KeywordNode(phrase, 1));
+                            } else {
+                                for (int m = 0; m < KeywordNodes.size(); m++) {
+                                    if (KeywordNodes.get(m).keyword.equals(phrase)) {
+                                        KeywordNodes.get(m).addCounter();
+                                        break;
+                                    }
+                                }
+                            }
+                            // System.out.println("catch phrase : " + phrase);
+                        }
+                    }
+                }
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
+        }
+    }
 
-				while (spiderEggs.size() < x
-						&& ProceeedURLPool.size() <= y && !URLPool.contains(candidateString[i])
-						&& !ProceeedURLPool.contains(candidateString[i])
-						&& !DeadLinkPool.contains(candidateString[i])
-						&& !hasSame(ProceeedURLPool, formatURL(candidateString[i]))) {
-					URLPool.add(candidateString[i]);
-					if (URLPool.size() > 0 && spiderEggs.size() < x) {
-						// System.out.println(candidateString[i]);
-						spiderEggs.add(new WebSpider(candidateString[i], x, y));
-						ProceeedURLPool.add(URLPool.remove());
-						new WebSpider(candidateString[i], x, y).spiderRun();
-					}
-				}
-			}
-		}
-	}
+    /**
+     * Extract hyperlink in current line, and start another spider process if the link has not been processed.
+     * @param currentLine - current html page line
+     */
+    private void extractHyperlinks(String currentLine) {
+        String[] candidateString = getCandidateURLString(currentLine);
+        if (candidateString != null) // and the URL pool is not full
+        {
+            for (int i = 0; i < candidateString.length && candidateString[i] != null; i++) {
+                if (candidateString[i].contains("#")) {
+                    if (candidateString[i].equals("#"))
+                        break;
+                    else
+                        candidateString[i] = candidateString[i].split("#")[0];
+                }
 
-	private String formatURL(String url) {
-		url = url.replaceFirst("http(s{0,1})://", "");
-		if (url.charAt(url.length() - 1) == '/')
-			url = url.substring(0, url.length() - 1);
-		return url;
-	}
+                if (candidateString[i].contains("<"))
+                    candidateString[i] = candidateString[i].split("<")[0];
 
-	private boolean hasSame(LinkedList<String> pool, String url) {
-		for (String poolUrl : pool) {
-			//System.out.println("hasSame |" + poolUrl + "| vs. |" + url + "|");
-			if (poolUrl.toLowerCase().equals(url.toLowerCase())) {
-				System.out.println("hasSame: " + url);
-				return true;
-			}
-		}
-		System.out.println("noSame: " + url);
-		return false;
-	}
+                if (!candidateString[i].contains("http"))
+                    candidateString[i] = prefix + domain + candidateString[i];
 
-	private String[] getCandidateURLString(String currentLine) {
-		if (currentLine.contains("<a href")) {
+                while (spiderEggs.size() < x
+                        && ProceeedURLPool.size() <= y && !URLPool.contains(candidateString[i])
+                        && !ProceeedURLPool.contains(candidateString[i])
+                        && !DeadLinkPool.contains(candidateString[i])
+                        && !hasSame(ProceeedURLPool, formatURL(candidateString[i]))) { // if url not processed
+                    URLPool.add(candidateString[i]);
+                    if (URLPool.size() > 0 && spiderEggs.size() < x) {
+                        // System.out.println(candidateString[i]);
+                        spiderEggs.add(new WebSpider(candidateString[i], x, y));
+                        ProceeedURLPool.add(URLPool.remove());
+                        new WebSpider(candidateString[i], x, y).spiderRun();
+                    }
+                }
+            }
+        }
+    }
 
-			int candidateSize = currentLine.split("href").length - 1;
-			String[] candidateString = new String[candidateSize];
-			Matcher urlMatcher = hrefPattern.matcher(currentLine);
+    /**
+     * Unify the url string by removing the protocol. Used for checking if the url has been processed.
+     * @param url - the url to process
+     * @return the formatted url
+     */
+    private String formatURL(String url) {
+        url = url.replaceFirst("http(s{0,1})://", "");
+        if (url.charAt(url.length() - 1) == '/')
+            url = url.substring(0, url.length() - 1);
+        return url;
+    }
 
-			for (int i = 0; i < candidateSize && urlMatcher.find(); i++) {
-				candidateString[i] = urlMatcher.group(1);
+    /**
+     * Check if the url is processed.
+     * @param pool - the processed url pool
+     * @param url - the target url
+     * @return <tt>true</tt> - if processed, <tt>false</tt> - if not been processed
+     */
+    private boolean hasSame(LinkedList<String> pool, String url) {
+        for (String poolUrl : pool) {
+            //System.out.println("hasSame |" + poolUrl + "| vs. |" + url + "|");
+            if (poolUrl.toLowerCase().equals(url.toLowerCase())) {
+                System.out.println("hasSame: " + url);
+                return true;
+            }
+        }
+        System.out.println("noSame: " + url);
+        return false;
+    }
 
-				if (isInStringArray(candidateString[i], URLException))
-					candidateString[i] = null;
-			}
-			return candidateString;
-		} else
-			return null;
-	}
+    /**
+     * Parse links in current line.
+     * @param currentLine - current html page line
+     * @return array of link
+     */
+    private String[] getCandidateURLString(String currentLine) {
+        if (currentLine.contains("<a href")) {
 
-	private boolean isInStringArray(String str, String[] strArray) {
-		boolean isIn = false;
-		for (int i = 0; i < strArray.length; i++) {
-			if (str.contains(strArray[i])) {
-				isIn = true;
-			}
-		}
-		return isIn;
-	}
+            int candidateSize = currentLine.split("href").length - 1;
+            String[] candidateString = new String[candidateSize];
+            Matcher urlMatcher = hrefPattern.matcher(currentLine);
 
-	public static void main(String[] args) {
-		System.setProperty("wordnet.database.dir", Settings.dictDir);
-		scanner = new Scanner(System.in);
-		System.out.println("Welcome to WebSpider!\n\n");
-		System.out.println("Do you want to run demo? It will start at HKBU main page with X = 10, Y = 100.(yes/no)");
+            for (int i = 0; i < candidateSize && urlMatcher.find(); i++) {
+                candidateString[i] = urlMatcher.group(1);
 
-		String isDemo = scanner.nextLine();
-		if (isDemo.toLowerCase().equals("yes")) {
-			WebSpider s = new WebSpider();
-			s.spiderRun();
-		} else {
-			System.out.println("Please input the full stating URL: ");
-			String URLStr = scanner.nextLine();
-			System.out.println("Please input the value of X:");
-			int X = scanner.nextInt();
-			System.out.println("Please input the value of Y:");
-			int Y = scanner.nextInt();
-			WebSpider s = new WebSpider(URLStr, X, Y);
-			if (s.getInputOk()) {
-				s.spiderRun();
-			} else {
-				System.err.println("\n\nSomething wrong with your input!");
-			}
+                if (isInStringArray(candidateString[i], URLException))
+                    candidateString[i] = null;
+            }
+            return candidateString;
+        } else
+            return null;
+    }
 
-		}
+    private boolean isInStringArray(String str, String[] strArray) {
+        boolean isIn = false;
+        for (int i = 0; i < strArray.length; i++) {
+            if (str.contains(strArray[i])) {
+                isIn = true;
+            }
+        }
+        return isIn;
+    }
 
-		// WebSpider s = new WebSpider();
-		// s.spiderRun();
-		System.out.println(
-				"\n\n\n================ Final Report " + DomainPool.size() + " domains visited=====================");
-		for (int i = 0; i < DomainPool.size(); i++)
-			System.out.println(DomainPool.get(i));
-		System.out.println();
-		System.out.println("These websides have been visited: ");
-		for (int i = 0; i < ProceeedURLPool.size(); i++)
-			System.out.println(ProceeedURLPool.get(i));
-		System.out.println("===========================================");
+    public static void main(String[] args) {
+        System.setProperty("wordnet.database.dir", Settings.dictDir);
+        scanner = new Scanner(System.in);
+        System.out.println("Welcome to WebSpider!\n\n");
+        System.out.println("Do you want to run demo? It will start at HKBU main page with X = 10, Y = 100.(yes/no)");
 
-	}
+        String isDemo = scanner.nextLine();
+        if (isDemo.toLowerCase().equals("yes")) {
+            WebSpider s = new WebSpider();
+            s.spiderRun();
+        } else {
+            System.out.println("Please input the full stating URL: ");
+            String URLStr = scanner.nextLine();
+            System.out.println("Please input the value of X:");
+            int X = scanner.nextInt();
+            System.out.println("Please input the value of Y:");
+            int Y = scanner.nextInt();
+            WebSpider s = new WebSpider(URLStr, X, Y);
+            if (s.getInputOk()) {
+                s.spiderRun();
+            } else {
+                System.err.println("\n\nSomething wrong with your input!");
+            }
+
+        }
+
+        // WebSpider s = new WebSpider();
+        // s.spiderRun();
+        System.out.println(
+                "\n\n\n================ Final Report " + DomainPool.size() + " domains visited=====================");
+        for (int i = 0; i < DomainPool.size(); i++)
+            System.out.println(DomainPool.get(i));
+        System.out.println();
+        System.out.println("These websides have been visited: ");
+        for (int i = 0; i < ProceeedURLPool.size(); i++)
+            System.out.println(ProceeedURLPool.get(i));
+        System.out.println("===========================================");
+
+    }
 
 }
 
 class KeywordNode {
-	String keyword;
-	int counter;
+    String keyword;
+    int counter;
 
-	public KeywordNode(String keywd, int cou) {
-		this.keyword = keywd;
-		counter = cou;
-	}
+    public KeywordNode(String keywd, int cou) {
+        this.keyword = keywd;
+        counter = cou;
+    }
 
-	public void addCounter() {
-		counter++;
-	}
+    public void addCounter() {
+        counter++;
+    }
 }
