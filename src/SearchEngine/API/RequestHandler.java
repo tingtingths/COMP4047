@@ -31,13 +31,11 @@ public class RequestHandler extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // setup response charset
+        response.setCharacterEncoding("UTF-8");
+
         String query = request.getQueryString();
         startTime = new Date().getTime();
-        /* Each node represent an AND/OR group, with left and right child.
-         * Parsing and processing will be done recursively.
-         * E.g.
-         * (A OR B), ((A OR B) AND C) ...etc.
-         */
         String qString = query.split("&")[0].split("=")[1].replace("%20", " ");
         Node initNode = parseNodes(qString);
         // debug building, the correct result should be same as the user input
@@ -52,9 +50,13 @@ public class RequestHandler extends HttpServlet {
         out.write(json);
     }
 
+    /* Each node represent an AND/OR group, with left and right child.
+ * Parsing and processing will be done recursively.
+ * E.g.
+ * (A OR B), ((A OR B) AND C) ...etc.
+ */
     // Tokenize the user query and build nodes
     private Node parseNodes(String q) {
-        //Loghelper.log(this.getClass().getSimpleName(), q);
         Matcher m = nodePattern.matcher(q);
         Node n = null;
 
@@ -62,13 +64,12 @@ public class RequestHandler extends HttpServlet {
             String type = m.group(2); // AND? OR?
             String left = m.group(1);
             String right = m.group(3);
-            //Loghelper.log(this.getClass().getSimpleName(), "Matches, " + left + " " + type + " " + right);
+
             if (type.equalsIgnoreCase("AND"))
                 n = new Node(Node.AND_NODE, parseNodes(left), parseNodes(right));
             if (type.equalsIgnoreCase("OR"))
                 n = new Node(Node.OR_NODE, parseNodes(left), parseNodes(right));
         } else {
-            //Loghelper.log(this.getClass().getSimpleName(), "No Matches, " + q);
             n = new Node(Node.STR_NODE, q);
         }
         return n;
@@ -95,7 +96,7 @@ public class RequestHandler extends HttpServlet {
         File f = new File(Settings.workingDir + "spiderResult.txt");
         String line = "";
         try {
-            BufferedReader r = new BufferedReader(new FileReader(f));
+            BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
             while ((line = r.readLine()) != null) { // for every url
                 boolean match = false;
                 String[] s = line.split(";"); // s[0] - domain, s[1] - url, s[2] - title, s[3] - keywords
@@ -110,11 +111,13 @@ public class RequestHandler extends HttpServlet {
                 }
 
                 if (match) {
+                    Loghelper.log(this.getClass().getSimpleName(), s[2]);
                     json += "{\"domain\":\"" + s[0] + "\", \"url\":\"" + s[1] + "\", \"title\":\"" + s[2] + "\", \"weight\":\"" + weight + "\"},";
                 }
             }
             r.close();
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
         long endTime = new Date().getTime();
 
         json += "{\"ms\" : \"" + (endTime - startTime) + "\"}";

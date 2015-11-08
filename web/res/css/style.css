@@ -55,9 +55,21 @@ body {
 #searchContainer {
 	position: relative;
 	text-align: center;
-	top: 50%;
+	top: 30%;
 	transition: top 0.3s ease-out, background 0.3s ease;
 	z-index: 3;
+}
+
+#logo {
+	width: 100%;
+	color: white;
+	text-align: center;
+	font-size: 48pt;
+	text-shadow: 3px 3px #3D997A;
+}
+
+#firstLetter {
+	font-size: 64pt;
 }
 
 #searchWrapper {
@@ -66,6 +78,7 @@ body {
 	background: rgba(255,255,255,0.8);
 	height: 45px;
 	transition: border 0.1s linear;
+	margin-top: 50px;
 }
 
 #textField {
@@ -87,6 +100,35 @@ body {
 	height: 30px;
 	cursor: pointer;
 	right: 0px;
+}
+
+#helpBtn {
+	cursor: pointer;
+	margin-top: 10px;
+	height: 20px;
+}
+
+
+.highlight {
+	color: #3D997A;
+}
+
+#helpBox {
+	display: inline-block;
+	text-align: left;
+	width: 400px;
+	margin-top: 5px;
+	padding: 5px 8px 5px 8px;
+	background: white;
+	transition: opacity 0.15s linear;
+	opacity: 0;
+	font-size: 12pt;
+	border-radius: 4px;
+}
+
+.innerText {
+	padding-left: 10px;
+	font-size: 10pt;
 }
 
 #lower {

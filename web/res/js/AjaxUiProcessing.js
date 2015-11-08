@@ -10,6 +10,7 @@ var appendStep = 5;
 var sortedResult = [];
 var appendLimit = 15; // 15 items per page
 var appendCount = 1;
+var isHelp = false;
 
 function search(ele) {
 	// debug calulate processing time
@@ -88,6 +89,14 @@ function startUiProcess(json) {
 		document.getElementById("whiteCover").style.opacity = "1";
 		document.getElementById("lower").style.opacity = "1";
 		document.getElementsByClassName("myFooter")[0].style.display = "none";
+		document.getElementById("helpBtn").style.display = "none";
+		document.getElementById("helpBox").style.display = "none";
+		document.getElementById("logo").style.display = "none";
+		document.getElementById("searchWrapper").style.marginTop = "0";
+		var spacers = document.getElementsByClassName("spacer");
+		for (var i = 0; i < spacers.length; i++) {
+			spacers[i].style.display = "none";
+		}
 	}
 	// process json
 	//....
@@ -197,5 +206,13 @@ function inputOnBlur() {
 		wrapper.style.border = "3px solid rgba(255,255,255,0)";
 		wrapper.style.borderStyle = "none none solid none";
 	}
+}
 
+function popHelp() {
+	if (isHelp) {
+		document.getElementById("helpBox").style.opacity = "0";
+	} else {
+		document.getElementById("helpBox").style.opacity = "1";
+	}
+	isHelp = !isHelp;
 }
